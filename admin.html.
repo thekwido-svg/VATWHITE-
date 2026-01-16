@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VAT WHITE - ADMIN</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Admin Control Panel</h1>
+        <p>Karibu kwenye dashibodi ya siri ya <strong>VAT WHITE</strong>.</p>
+        <hr>
+        <h3>Usimamizi wa Wachezaji</h3>
+        <p>Hapa utaona salio la wachezaji wote pindi database itakapokamilika.</p>
+        <button onclick="alert('Mfumo unajiunga na Postgres...')">Angalia Salio</button>
+    </div>
+</body>
+</html>
