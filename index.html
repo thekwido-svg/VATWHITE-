@@ -1,77 +1,175 @@
 <!DOCTYPE html>
-<html>
+<html lang="sw">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VATWHITE</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VATWHITE FOOTBALL</title>
     <style>
-        body { margin: 0; background: #000; color: white; font-family: sans-serif; text-align: center; }
-        .btn { padding: 15px; margin: 5px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; }
-        .btn-red { background: #d40000; color: white; width: 80%; }
-        input { width: 80%; padding: 12px; margin: 8px; background: #111; color: white; border: 1px solid #333; }
-        #game-screen { display: none; }
-        #multiplier { font-size: 50px; margin: 40px 0; color: #00ff00; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #000; color: white; font-family: 'Arial', sans-serif; overflow: hidden; }
+        
+        /* Login Screen */
+        #auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; padding: 20px; }
+        .input-box { width: 100%; max-width: 320px; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #333; background: #111; color: white; font-size: 16px; }
+        .btn-join { width: 100%; max-width: 320px; padding: 15px; background: #008000; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 18px; }
+
+        /* Game Screen */
+        #game-screen { display: none; flex-direction: column; height: 100vh; }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #161616; border-bottom: 2px solid #ffd700; }
+        .bal-box { color: #ffd700; font-weight: bold; background: #000; padding: 5px 12px; border-radius: 15px; border: 1px solid #ffd700; }
+
+        /* Uwanja wa Mpira */
+        #court { flex-grow: 1; position: relative; background: radial-gradient(circle, #002200, #000); overflow: hidden; }
+        #mult-display { font-size: 60px; font-weight: bold; color: #ffd700; text-align: center; margin-top: 25%; z-index: 10; position: relative; }
+        #ball { position: absolute; font-size: 45px; left: 10%; bottom: 10%; z-index: 20; transition: 0.1s linear; }
+        #trail { position: absolute; left: 10%; bottom: 10%; border-left: 5px solid #ffd700; border-bottom: 5px solid #ffd700; z-index: 5; opacity: 0.8; box-shadow: 0 0 15px #ffd700; }
+
+        /* Controls */
+        .controls { padding: 15px; background: #161616; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-action { padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; }
+        .btn-bet { background: #008000; font-size: 16px; width: 100%; margin-top: 5px; }
+        .bet-input { width: 100%; padding: 8px; background: #000; color: #ffd700; border: 1px solid #333; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div id="auth-screen">
-        <h1 style="color:red">VATWHITE</h1>
-        <input type="text" id="fn" placeholder="Jina la Kwanza">
-        <input type="text" id="ln" placeholder="Jina la Pili">
-        <input type="text" id="ph" placeholder="Namba ya Simu">
-        <input type="password" id="pw" placeholder="Password">
-        <button class="btn btn-red" onclick="anza()">JISAJILI & ANZA</button>
+
+<div id="auth-screen">
+    <h1 style="color:#ffd700; margin-bottom: 5px;">VATWHITE</h1>
+    <p style="margin-top:0; color:#888;">Ingia ucheze na ushinde</p>
+    <input type="text" id="fn" class="input-box" placeholder="Jina la Kwanza">
+    <input type="text" id="ln" class="input-box" placeholder="Jina la Pili">
+    <input type="number" id="ph" class="input-box" placeholder="Namba ya Simu (07...)">
+    <input type="password" id="pw" class="input-box" placeholder="Nenosiri (Password)">
+    <button class="btn-join" onclick="handleAuth()">INGIA / JISAJILI</button>
+</div>
+
+<div id="game-screen">
+    <div class="top-nav">
+        <div id="user-display" style="font-weight:bold;">Mchezaji</div>
+        <div class="bal-box">KES <span id="bal-display">0.00</span></div>
     </div>
 
-    <div id="game-screen">
-        <div style="background:#111; padding:10px; display:flex; justify-content:space-between;">
-            <span id="u-name">...</span>
-            <span style="color:yellow">KES <b id="u-bal">0.00</b></span>
-        </div>
-        <div style="margin: 10px;">
-            <button onclick="deposit()" style="background:green; color:white; padding:10px;">DEPOSIT</button>
-            <button onclick="withdraw()" style="background:#333; color:white; padding:10px;">WITHDRAW</button>
-        </div>
-        <div id="multiplier">1.00x</div>
-        <img src="https://i.ibb.co/V99n9vM/rocket.png" id="ndege" style="width:50px; position:absolute; left:10%; bottom:20%;">
+    <div style="display:flex; justify-content:space-around; background:#111; padding:10px;">
+        <button onclick="alert('LIPA KWA: 0702170114\nJina: VATWHITE\nKisha subiri salio lako liongezwe.')" style="background:gold; color:black; border:none; padding:8px 15px; border-radius:4px; font-weight:bold;">DEPOSIT</button>
+        <button onclick="requestWithdraw()" style="background:#444; color:white; border:none; padding:8px 15px; border-radius:4px;">WITHDRAW</button>
+        <button onclick="logout()" style="background:red; color:white; border:none; padding:8px 15px; border-radius:4px;">LOGOUT</button>
     </div>
+
+    <div id="court">
+        <div id="mult-display">1.00x</div>
+        <div id="trail"></div>
+        <div id="ball">⚽</div>
+    </div>
+
+    <div class="controls">
+        <div style="background:#222; padding:10px; border-radius:8px; border:1px solid #333;">
+            <input type="number" id="betAmount" class="bet-input" value="10">
+            <button class="btn-action btn-bet" onclick="placeBet()">BET</button>
+        </div>
+        <div style="background:#222; padding:10px; border-radius:8px; border:1px solid #333;">
+            <div style="text-align:center; color:#888; font-size:12px;">Auto Cashout</div>
+            <input type="number" id="autoCash" class="bet-input" value="2.00">
+            <button class="btn-action" style="background:#d40000; width:100%; margin-top:5px;" onclick="placeBet()">BET</button>
+        </div>
+    </div>
+</div>
 
 <script>
-    let me = null;
-    async function anza() {
-        const d = { firstName:document.getElementById('fn').value, lastName:document.getElementById('ln').value, phone:document.getElementById('ph').value, password:document.getElementById('pw').value };
-        const res = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) });
+    let activeUser = JSON.parse(localStorage.getItem('vatwhite_session'));
+
+    // Angalia kama mteja alishawahi kuingia (Session)
+    if (activeUser) { launchGame(); }
+
+    async function handleAuth() {
+        const payload = {
+            firstName: document.getElementById('fn').value,
+            lastName: document.getElementById('ln').value,
+            phone: document.getElementById('ph').value,
+            password: document.getElementById('pw').value
+        };
+
+        if (!payload.phone || !payload.password) return alert("Jaza namba na password!");
+
+        const res = await fetch('/api/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
         const r = await res.json();
-        if(r.success) {
-            me = r.user;
-            document.getElementById('auth-screen').style.display='none';
-            document.getElementById('game-screen').style.display='block';
-            document.getElementById('u-name').innerText = me.name;
-            document.getElementById('u-bal').innerText = parseFloat(me.balance).toFixed(2);
-            startSync();
+        
+        if (r.success) {
+            localStorage.setItem('vatwhite_session', JSON.stringify(r.user));
+            activeUser = r.user;
+            launchGame();
+        } else {
+            alert("Login Imeshindikana!");
         }
     }
 
-    function startSync() {
-        setInterval(async () => {
-            const res = await fetch('/api/game-state');
-            const data = await res.json();
-            document.getElementById('multiplier').innerText = data.multiplier.toFixed(2) + "x";
-            const p = document.getElementById('ndege');
-            p.style.left = (10 + (data.multiplier * 2)) + "%";
-            p.style.bottom = (20 + (data.multiplier * 3)) + "%";
-            if(data.multiplier === 1.00) { p.style.left="10%"; p.style.bottom="20%"; }
-        }, 100);
+    function launchGame() {
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'flex';
+        document.getElementById('user-display').innerText = activeUser.name;
+        document.getElementById('bal-display').innerText = parseFloat(activeUser.balance).toFixed(2);
+        syncEngine();
     }
 
-    function deposit() { alert("LIPA KWA: 0702170114\nJina: VATWHITE\nKisha subiri admin aweke salio."); }
-    async function withdraw() {
-        const amt = prompt("Kiasi unachotoa:");
-        if(amt) {
-            const res = await fetch('/api/withdraw', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone:me.phone, amount:amt}) });
+    function syncEngine() {
+        const ball = document.getElementById('ball');
+        const trail = document.getElementById('trail');
+        const display = document.getElementById('mult-display');
+
+        setInterval(async () => {
+            try {
+                const res = await fetch('/api/game-state');
+                const data = await res.json();
+                const m = data.multiplier;
+
+                display.innerText = m.toFixed(2) + "x";
+
+                // Mpira unaanzia chini (10%, 10%) na kupanda juu
+                let posX = 10 + (m * 4.5);
+                let posY = 10 + (m * 6.5);
+                ball.style.left = posX + "%";
+                ball.style.bottom = posY + "%";
+
+                // Mstari wa Dhahabu unaochorwa nyuma ya mpira
+                trail.style.width = (posX - 10) + "%";
+                trail.style.height = (posY - 10) + "%";
+
+                if (m === 1.00) {
+                    display.style.color = "red";
+                    ball.style.opacity = "0";
+                    setTimeout(() => { ball.style.opacity = "1"; }, 300);
+                    trail.style.width = "0"; trail.style.height = "0";
+                } else {
+                    display.style.color = "#ffd700";
+                }
+            } catch (e) { console.log("Server error"); }
+        }, 120);
+    }
+
+    async function requestWithdraw() {
+        const kiasi = prompt("Weka kiasi unachotoa (KES):");
+        if (kiasi && kiasi >= 50) {
+            const res = await fetch('/api/withdraw', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ phone: activeUser.phone, amount: kiasi })
+            });
             const data = await res.json();
             alert(data.message);
-            location.reload();
+            location.reload(); 
         }
+    }
+
+    function logout() {
+        localStorage.removeItem('vatwhite_session');
+        location.reload();
+    }
+
+    function placeBet() {
+        alert("Dau lako limewekwa! Subiri mzunguko ujao.");
     }
 </script>
 </body>
