@@ -1,34 +1,23 @@
-// Server inatengeneza Multiplier moja kwa wote
-let currentMultiplier = 1.00;
-let isGameRunning = true;
+const express = require('express');
+const { Pool } = require('pg');
+const app = express();
+app.use(express.json());
+app.use(express.static('.')); // Hii inaruhusu admin.html na index.html kuonekana
 
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL, // Inachukua link uliyoweka Render
+  ssl: { rejectUnauthorized: false }
+});
+
+// Hii inahakikisha ndege inaenda sawa kwa kila mtu duniani
+let multiplier = 1.00;
 setInterval(() => {
-    if (isGameRunning) {
-        currentMultiplier += 0.01;
-        if (currentMultiplier > Math.random() * 10 + 2) { // Ndege inapasuka (Crash)
-            isGameRunning = false;
-            setTimeout(() => { currentMultiplier = 1.00; isGameRunning = true; }, 5000);
-        }
-    }
+    multiplier += 0.01;
+    if (multiplier > 10.00) multiplier = 1.00; // Reset ikifika 10x
 }, 100);
 
-// Njia ya Search kwa Admin
-app.get('/admin/search', async (req, res) => {
-    const { term } = req.query;
-    const result = await pool.query(
-        "SELECT * FROM users WHERE name ILIKE $1 OR phone LIKE $1", 
-        [`%${term}%`]
-    );
-    res.json(result.rows);
+app.get('/api/game-state', (req, res) => {
+    res.json({ multiplier });
 });
 
-// Usajili wa majina mawili
-app.post('/api/register', async (req, res) => {
-    const { firstName, lastName, phone, password } = req.body;
-    const fullName = `${firstName} ${lastName}`;
-    const result = await pool.query(
-        "INSERT INTO users (name, phone, password, balance) VALUES ($1, $2, $3, 0) RETURNING *",
-        [fullName, phone, password]
-    );
-    res.json({ success: true, user: result.rows[0] });
-});
+app.listen(process.env.PORT || 3000, () => console.log("Mchezo umewaka!"));
