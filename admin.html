@@ -2,74 +2,80 @@
 <html lang="sw">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VATWHITE - ADMIN PANEL</title>
+    <title>VATWHITE - ADMIN REAL-TIME</title>
     <style>
-        body { background-color: #0a0a0a; color: #eee; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
-        .header { background: #1a1a1a; padding: 20px; border-radius: 10px; border-left: 5px solid #facc15; margin-bottom: 20px; }
-        h1 { color: #facc15; margin: 0; font-size: 24px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; }
-        .stat-card h3 { margin: 0; font-size: 14px; color: #888; }
-        .stat-card p { margin: 5px 0 0; font-size: 20px; font-weight: bold; color: #22c55e; }
-        
-        table { width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 10px; overflow: hidden; }
-        th { background: #333; color: #facc15; text-align: left; padding: 15px; }
-        td { padding: 15px; border-bottom: 1px solid #222; }
-        .btn-action { background: #facc15; color: #000; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        input { background: #222; border: 1px solid #444; color: white; padding: 8px; border-radius: 5px; width: 100px; }
+        body { background: #111; color: white; font-family: sans-serif; padding: 20px; }
+        .card { background: #222; padding: 15px; margin-bottom: 20px; border-left: 5px solid #facc15; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid #333; text-align: left; }
+        th { background: #facc15; color: #000; }
+        .btn-pay { background: #22c55e; color: white; padding: 5px; cursor: pointer; border-radius: 4px; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <h1>VATWHITE DASHBOARD</h1>
-        <p>Usimamizi wa Mfumo na Wachezaji</p>
+    <h1>VATWHITE - Usimamizi wa Biashara</h1>
+    
+    <div class="card">
+        <h3>Maombi ya Kutoa Pesa (Withdraw Requests)</h3>
+        <table id="withdrawTable">
+            <thead>
+                <tr>
+                    <th>Jina Kamili</th>
+                    <th>Namba ya MPESA</th>
+                    <th>Kiasi (KES)</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
     </div>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h3>Wachezaji Walio Online</h3>
-            <p id="onlineCount">412</p>
-        </div>
-        <div class="stat-card">
-            <h3>Jumla ya Madau (Leo)</h3>
-            <p>1,240,000 TZS</p>
-        </div>
-        <div class="stat-card">
-            <h3>Faida ya Mfumo</h3>
-            <p>320,500 TZS</p>
-        </div>
+    <div class="card">
+        <h3>Wachezaji Waliojisajili (Registered Users)</h3>
+        <table id="usersTable">
+            <thead>
+                <tr>
+                    <th>Jina</th>
+                    <th>Namba ya Simu</th>
+                    <th>Salio la Kweli (KES)</th>
+                    <th>Ongeza Salio</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
     </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>ID ya Mchezaji</th>
-                <th>Salio (TZS)</th>
-                <th>Kiasi cha Kuongeza</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody id="userList">
-            <tr>
-                <td>USER_8892</td>
-                <td>15,400</td>
-                <td><input type="number" placeholder="Tsh"></td>
-                <td><button class="btn-action">ONGEZA PESA</button></td>
-            </tr>
-            <tr>
-                <td>USER_1023</td>
-                <td>2,100</td>
-                <td><input type="number" placeholder="Tsh"></td>
-                <td><button class="btn-action">ONGEZA PESA</button></td>
-            </tr>
-        </tbody>
-    </table>
 
     <script>
-        // Hapa utaongeza kodi za kuunganisha na server.js ili kuona data halisi
-        console.log("VATWHITE Admin Panel Loaded Successfully");
+        async function loadData() {
+            // Hii itachukua data ya kweli kutoka kwenye server yako
+            const res = await fetch('/admin/data');
+            const data = await res.json();
+            
+            // Jaza meza ya Withdraw
+            const wTable = document.querySelector("#withdrawTable tbody");
+            wTable.innerHTML = data.withdraws.map(w => `
+                <tr>
+                    <td>${w.name}</td>
+                    <td>${w.phone}</td>
+                    <td>${w.amount}</td>
+                    <td><button class="btn-pay" onclick="markPaid('${w.phone}')">Nimemlipa</button></td>
+                </tr>
+            `).join('');
+
+            // Jaza meza ya Wachezaji
+            const uTable = document.querySelector("#usersTable tbody");
+            uTable.innerHTML = data.users.map(u => `
+                <tr>
+                    <td>${u.name}</td>
+                    <td>${u.phone}</td>
+                    <td>${u.balance}</td>
+                    <td><input type="number" id="amt-${u.phone}"><button onclick="topUp('${u.phone}')">OK</button></td>
+                </tr>
+            `).join('');
+        }
+        setInterval(loadData, 5000); // Inajifunua kila baada ya sekunde 5
     </script>
 </body>
 </html>
