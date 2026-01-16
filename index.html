@@ -3,95 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VATWHITE - OFFICIAL</title>
+    <title>VATWHITE - REAL TIME GAME</title>
     <style>
-        body { background-color: #050505; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; margin: 0; overflow: hidden; }
-        .game-header { background: #111; padding: 15px; display: flex; justify-content: space-between; border-bottom: 3px solid #facc15; font-weight: bold; }
-        .multiplier { font-size: 90px; color: #facc15; margin-top: 40px; font-weight: 900; text-shadow: 0 0 20px rgba(250, 204, 21, 0.5); }
-        .multiplier.crash { color: #ff0000; text-shadow: 0 0 20px rgba(255, 0, 0, 0.8); }
-        .brand { font-size: 24px; color: #fff; letter-spacing: 2px; margin-top: 10px; font-weight: bold; }
+        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; text-align: center; }
+        .header { background: #111; padding: 10px; display: flex; justify-content: space-between; border-bottom: 2px solid #facc15; }
+        .multiplier { font-size: 70px; color: #facc15; margin: 20px 0; font-weight: bold; }
+        .game-area { height: 250px; position: relative; background: radial-gradient(circle, #222, #000); overflow: hidden; }
+        .rocket { position: absolute; bottom: 10%; left: 10%; font-size: 40px; transition: 0.1s linear; }
         
-        /* Graphics */
-        .stage { position: relative; height: 250px; width: 100%; overflow: hidden; background: radial-gradient(circle, #1a1a1a 0%, #050505 100%); }
-        .object { font-size: 50px; position: absolute; left: 10%; bottom: 10%; transition: all 0.1s linear; }
-
-        .bet-area { background: #151515; padding: 25px; position: fixed; bottom: 0; width: 100%; border-top: 1px solid #333; box-sizing: border-box; }
-        .btn-bet { background: #22c55e; color: white; padding: 18px; border: none; border-radius: 12px; font-size: 22px; font-weight: bold; width: 100%; cursor: pointer; transition: 0.3s; }
-        .btn-bet:active { transform: scale(0.95); }
-        input { background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; width: 100%; margin-bottom: 15px; font-size: 18px; box-sizing: border-box; }
+        /* Sehemu ya Bet */
+        .controls { background: #1a1a1a; padding: 20px; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
+        .btn { padding: 15px; width: 45%; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn-bet { background: #28a745; color: white; }
+        .btn-cashout { background: #facc15; color: black; display: none; }
+        
+        /* Wachezaji wa Live */
+        .live-bets { text-align: left; padding: 10px; font-size: 12px; color: #aaa; }
+        .bet-row { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 5px 0; }
     </style>
 </head>
 <body>
-    <div class="game-header">
-        <span style="color: #22c55e;">● LIVE</span>
-        <span id="balance">BALANCE: 10,000 TZS</span>
+    <div class="header">
+        <span>VATWHITE</span>
+        <span>Balance: <b id="balance">10,000</b> KES</span>
     </div>
 
-    <div class="brand">VATWHITE</div>
-    <div class="multiplier" id="display">1.00x</div>
-    
-    <div class="stage">
-        <div class="object" id="playerObj">🚀</div>
+    <div id="auth" style="padding: 20px; background: #222;">
+        <input id="phone" type="text" placeholder="Namba ya Simu (Kenya/TZ)" style="padding: 10px;">
+        <button onclick="document.getElementById('auth').style.display='none'">INGIA / JISAJILI</button>
     </div>
 
-    <div class="bet-area">
-        <input type="number" id="betAmount" placeholder="Weka Kiasi (TZS)">
-        <button class="btn-bet" onclick="startGame()" id="betBtn">WEKA DAU</button>
-        <p style="font-size: 11px; color: #666; margin-top: 10px;">TILL: 5957388 | VATWHITE GAME</p>
+    <div class="multiplier" id="mult-display">1.00x</div>
+    <div class="game-area">
+        <div class="rocket" id="rocket">🚀</div>
     </div>
 
-    <audio id="tickSound" src="https://www.soundjay.com/buttons/sounds/button-50.mp3"></audio>
-    <audio id="crashSound" src="https://www.soundjay.com/free-music/sounds/fail-trumpet-01.mp3"></audio>
+    <div class="live-bets" id="live-list">
+        <div class="bet-row"><span>Otieno (Nairobi)</span> <span>500 KES</span></div>
+        <div class="bet-row"><span>Wafula (Bungoma)</span> <span>200 KES</span></div>
+    </div>
+
+    <div class="controls">
+        <input type="number" id="amount" placeholder="Kiasi (KES)" style="width: 80%; padding: 10px; margin-bottom: 10px; background: #333; color: #fff; border: 1px solid #555;">
+        <div style="display: flex; justify-content: space-around;">
+            <button class="btn btn-bet" id="bet-btn" onclick="placeBet()">WEKA DAU</button>
+            <button class="btn btn-cashout" id="cash-btn" onclick="cashOut()">WITHDRAW</button>
+        </div>
+    </div>
 
     <script>
-        let mult = 1.0;
-        let running = false;
-        let tick = document.getElementById('tickSound');
-        let crash = document.getElementById('crashSound');
+        let multiplier = 1.0;
+        let isRunning = false;
+        let betPlaced = false;
 
-        function startGame() {
-            if(running) return;
-            mult = 1.0;
-            running = true;
-            document.getElementById('display').classList.remove('crash');
-            document.getElementById('betBtn').innerText = "CASH OUT";
-            document.getElementById('betBtn').style.backgroundColor = "#facc15";
-            document.getElementById('betBtn').style.color = "#000";
-            
-            let gameLoop = setInterval(() => {
-                if(!running) {
-                    clearInterval(gameLoop);
-                    return;
-                }
-                mult += 0.01;
-                document.getElementById('display').innerText = mult.toFixed(2) + "x";
+        function placeBet() {
+            if(isRunning) return;
+            isRunning = true;
+            betPlaced = true;
+            multiplier = 1.0;
+            document.getElementById('bet-btn').style.display = 'none';
+            document.getElementById('cash-btn').style.display = 'inline-block';
+            startFlight();
+        }
+
+        function startFlight() {
+            let interval = setInterval(() => {
+                if(!isRunning) { clearInterval(interval); return; }
+                multiplier += 0.01;
+                document.getElementById('mult-display').innerText = multiplier.toFixed(2) + "x";
                 
-                // Chezesha sauti kila namba ikiongezeka
-                tick.play().catch(() => {});
+                // Ndege kusonga juu
+                let r = document.getElementById('rocket');
+                r.style.bottom = (10 + multiplier * 5) + "%";
+                r.style.left = (10 + multiplier * 3) + "%";
 
-                // Sogeza chombo juu
-                let obj = document.getElementById('playerObj');
-                obj.style.left = (10 + (mult * 2)) + "%";
-                obj.style.bottom = (10 + (mult * 5)) + "%";
-
-                // Uwezekano wa ku-crash
-                if(Math.random() < 0.005 && mult > 1.2) {
-                    stopGame();
-                    clearInterval(gameLoop);
+                // Crash ya ghafla
+                if(Math.random() < 0.007 && multiplier > 1.1) {
+                    isRunning = false;
+                    document.getElementById('mult-display').style.color = "red";
+                    document.getElementById('mult-display').innerText = "CRASHED @ " + multiplier.toFixed(2);
+                    resetGame();
                 }
             }, 100);
         }
 
-        function stopGame() {
-            running = false;
-            crash.play().catch(() => {});
-            document.getElementById('display').classList.add('crash');
-            document.getElementById('display').innerText = "LOSE! @ " + mult.toFixed(2) + "x";
-            document.getElementById('betBtn').innerText = "JARIBU TENA";
-            document.getElementById('betBtn').style.backgroundColor = "#22c55e";
-            document.getElementById('betBtn').style.color = "#fff";
+        function cashOut() {
+            if(!isRunning || !betPlaced) return;
+            let win = document.getElementById('amount').value * multiplier;
+            alert("Umeshinda KES " + win.toFixed(2));
+            isRunning = false;
+            resetGame();
+        }
+
+        function resetGame() {
+            betPlaced = false;
+            setTimeout(() => {
+                document.getElementById('bet-btn').style.display = 'inline-block';
+                document.getElementById('cash-btn').style.display = 'none';
+                document.getElementById('mult-display').style.color = "#facc15";
+                document.getElementById('rocket').style.bottom = "10%";
+                document.getElementById('rocket').style.left = "10%";
+            }, 2000);
         }
     </script>
 </body>
 </html>
-
