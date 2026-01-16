@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VAT WHITE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { background: #000; color: #fff; text-align: center; font-family: sans-serif; padding-top: 50px; }
+        #odds { font-size: 80px; font-weight: bold; color: #f1c40f; margin: 40px 0; }
+        .btn { background: #28a745; color: white; padding: 20px; border: none; border-radius: 10px; width: 80%; font-size: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>VAT WHITE - AVIATOR</h1>
+    <div id="odds">1.00x</div>
+    <button class="btn" onclick="window.location.href='tel:0702170114'">WEKA PESA (TILL 5957388)</button>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        socket.on('tick', (m) => { 
+            document.getElementById('odds').innerText = m + "x"; 
+            document.getElementById('odds').style.color = "#f1c40f"; 
+        });
+        socket.on('crash', (m) => { 
+            document.getElementById('odds').innerText = "CRASHED!"; 
+            document.getElementById('odds').style.color = "red"; 
+        });
+    </script>
+</body>
+</html>
