@@ -1,8 +1,4 @@
 {
-  "name": "vatwhite",
-  "version": "1.0.0",
-  "description": "Football Betting Game",
-  "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
