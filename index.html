@@ -1,32 +1,45 @@
-        <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="sw">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VATWHITE - REAL TIME</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; text-align: center; }
+        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; text-align: center; overflow-x: hidden; }
         .top-bar { display: flex; justify-content: space-between; padding: 15px; background: #111; border-bottom: 2px solid #facc15; }
         .multiplier { font-size: 80px; color: #facc15; margin: 20px 0; font-weight: bold; }
         .stage { height: 250px; position: relative; background: radial-gradient(circle, #1a1a1a, #000); overflow: hidden; }
         .rocket { position: absolute; bottom: 10%; left: 10%; font-size: 50px; transition: 0.1s linear; }
         .bet-box { background: #151515; padding: 20px; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
-        #auth-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: #000; z-index: 1000; padding-top: 50px; }
-        input { background: #222; border: 1px solid #444; color: #fff; padding: 12px; margin: 5px; width: 80%; border-radius: 8px; }
-        .btn { padding: 15px; border: none; border-radius: 10px; font-weight: bold; width: 80%; cursor: pointer; }
+        #auth-screen, #modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 1000; padding-top: 50px; display: none; }
+        input { background: #222; border: 1px solid #444; color: #fff; padding: 12px; margin: 5px; width: 80%; border-radius: 8px; font-size: 16px; }
+        .btn { padding: 15px; border: none; border-radius: 10px; font-weight: bold; width: 80%; cursor: pointer; margin-top: 10px; }
+        .btn-green { background: #22c55e; color: #fff; }
+        .btn-yellow { background: #facc15; color: #000; }
     </style>
 </head>
-<body>
+<body onload="checkAuth()">
 
-    <div id="auth-screen">
+    <div id="auth-screen" style="display: block;">
         <h2 style="color:#facc15">VATWHITE REGISTRATION</h2>
         <input type="text" id="regName" placeholder="Jina Kamili">
         <input type="text" id="regPhone" placeholder="Namba ya MPESA (07...)">
-        <button class="btn" style="background:#22c55e" onclick="register()">ANZA KUCHEZA</button>
+        <button class="btn btn-green" onclick="register()">ANZA KUCHEZA</button>
+    </div>
+
+    <div id="modal">
+        <div id="modal-content" style="background:#222; margin: 20% auto; padding: 20px; width: 80%; border-radius: 15px; border: 1px solid #facc15;">
+            <h3 id="modal-title" style="color:#facc15"></h3>
+            <div id="modal-body"></div>
+            <button class="btn btn-yellow" onclick="closeModal()" style="width: 50%;">FUNGA</button>
+        </div>
     </div>
 
     <div class="top-bar">
-        <span id="uName">VATWHITE</span>
+        <div>
+            <span id="uName">VATWHITE</span>
+            <button onclick="showDeposit()" style="background:#22c55e; border:none; color:#fff; border-radius:5px; padding:5px 10px; margin-left:10px;">DEPOSIT</button>
+        </div>
         <span>KES <b id="bal">0.00</b></span>
     </div>
 
@@ -35,47 +48,81 @@
         <div class="rocket" id="rocket">🚀</div>
     </div>
 
-    <div style="font-size: 12px; color: #888; padding: 10px;" id="live-players">
-        Wanaocheza sasa: Juma, Otieno, Kamau, Mutua, Sarah...
+    <div style="font-size: 12px; color: #888; padding: 10px;">
+        Wanaocheza: Juma, Otieno, Kamau, Mutua, Sarah...
     </div>
 
     <div class="bet-box">
-        <button class="btn" id="betB" style="background:#22c55e" onclick="placeBet()">BET</button>
-        <button class="btn" id="cashB" style="background:#facc15; color:#000; display:none;" onclick="cashOut()">CASH OUT</button>
-        <p style="font-size: 10px; margin-top:10px;">Deposit via MPESA: 0702170114</p>
+        <button class="btn btn-green" id="betB" onclick="placeBet()">BET</button>
+        <button class="btn btn-yellow" id="cashB" style="display:none;" onclick="cashOut()">CASH OUT</button>
+        <button class="btn" style="background:#444; color:#fff;" onclick="showWithdraw()">WITHDRAW</button>
     </div>
 
-    <audio id="s-tick" src="https://www.soundjay.com/buttons/sounds/button-50.mp3"></audio>
+    <audio id="s-engine" src="https://www.soundjay.com/transportation/sounds/jet-pass-by-01.mp3" loop></audio>
+    <audio id="s-crash" src="https://www.soundjay.com/free-music/sounds/fail-trumpet-01.mp3"></audio>
 
     <script>
-        let userName = "";
+        let userName = ""; let phone = ""; let balance = 0;
+
         function register() {
             userName = document.getElementById('regName').value;
-            if(userName) {
+            phone = document.getElementById('regPhone').value;
+            if(userName && phone) {
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('uName').innerText = userName;
                 startSync();
             }
         }
 
+        function showDeposit() {
+            const m = document.getElementById('modal');
+            document.getElementById('modal-title').innerText = "WEKA PESA";
+            document.getElementById('modal-body').innerHTML = `<p>Tuma pesa kwenda:</p><h4>0702170114</h4><p>Subiri dakika 1 baada ya kutuma.</p>`;
+            m.style.display = 'block';
+        }
+
+        function showWithdraw() {
+            const m = document.getElementById('modal');
+            document.getElementById('modal-title').innerText = "TOA PESA (WITHDRAW)";
+            document.getElementById('modal-body').innerHTML = `
+                <input type="number" id="winAmt" placeholder="Kiasi cha kutoa" style="width: 90%;">
+                <button class="btn btn-green" onclick="sendWithdrawRequest()">TUMA OMBI</button>`;
+            m.style.display = 'block';
+        }
+
+        async function sendWithdrawRequest() {
+            let kiasi = document.getElementById('winAmt').value;
+            if(kiasi > 0) {
+                // Tuma taarifa kwa server
+                await fetch('/withdraw-request', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ name: userName, phone: phone, amount: kiasi })
+                });
+                alert("Ombi la kutoa KES " + kiasi + " limetumwa kwa Admin.");
+                closeModal();
+            }
+        }
+
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
         function startSync() {
             setInterval(async () => {
                 const res = await fetch('/game-state');
                 const data = await res.json();
-                
-                const mDisplay = document.getElementById('m-display');
                 const rocket = document.getElementById('rocket');
+                const engine = document.getElementById('s-engine');
 
                 if (data.isCrashed) {
-                    mDisplay.style.color = "red";
-                    mDisplay.innerText = "FLEW AWAY!";
+                    document.getElementById('m-display').innerText = "FLEW AWAY!";
+                    document.getElementById('m-display').style.color = "red";
+                    engine.pause();
                     rocket.style.left = "10%"; rocket.style.bottom = "10%";
                 } else {
-                    mDisplay.style.color = "#facc15";
-                    mDisplay.innerText = data.multiplier + "x";
-                    document.getElementById('s-tick').play().catch(()=>{});
+                    document.getElementById('m-display').innerText = data.multiplier + "x";
+                    document.getElementById('m-display').style.color = "#facc15";
+                    if(engine.paused) engine.play().catch(()=>{});
                     
-                    // Ndege kusonga kulingana na namba ya server
                     let val = parseFloat(data.multiplier);
                     rocket.style.left = (10 + (val * 3)) + "%";
                     rocket.style.bottom = (10 + (val * 5)) + "%";
@@ -85,3 +132,4 @@
     </script>
 </body>
 </html>
+            
