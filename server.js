@@ -1,41 +1,43 @@
 const express = require('express');
-const http = require('http');
-const path = require('path');
 const app = express();
-const server = http.createServer(app);
-
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '.')));
+app.use(express.static('.'));
 
-// Mfumo wa Safari Moja (Global State)
 let currentMultiplier = 1.00;
 let isCrashed = false;
-let gameInterval;
+let withdrawRequests = []; // Hapa ndipo maombi yanahifadhiwa
 
 function startGame() {
-    currentMultiplier = 1.00;
-    isCrashed = false;
-    gameInterval = setInterval(() => {
+    currentMultiplier = 1.00; isCrashed = false;
+    let loop = setInterval(() => {
         if (!isCrashed) {
             currentMultiplier += 0.01;
-            // Uwezekano wa kuanguka
-            if (Math.random() < 0.007 && currentMultiplier > 1.10) {
+            if (Math.random() < 0.007 && currentMultiplier > 1.1) {
                 isCrashed = true;
-                setTimeout(startGame, 5000); // Anza safari mpya baada ya sekunde 5
+                clearInterval(loop);
+                setTimeout(startGame, 5000);
             }
         }
     }, 100);
 }
 
-// Route ya kuona hali ya ndege sasa hivi
 app.get('/game-state', (req, res) => {
-    res.json({
-        multiplier: currentMultiplier.toFixed(2),
-        isCrashed: isCrashed
-    });
+    res.json({ multiplier: currentMultiplier.toFixed(2), isCrashed: isCrashed });
+});
+
+// Admin itakuja kuona hapa
+app.post('/withdraw-request', (req, res) => {
+    const request = req.body;
+    withdrawRequests.push(request);
+    console.log("!!! OMBI JIPYA LA WITHDRAW !!!");
+    console.log(`Mteja: ${request.name}, Namba: ${request.phone}, Kiasi: KES ${request.amount}`);
+    res.sendStatus(200);
+});
+
+// Admin Panel Rahisi (Fungua /admin-panel kuona)
+app.get('/admin-panel', (req, res) => {
+    res.send(`<h1>Maombi ya Kutoa Pesa</h1><pre>${JSON.stringify(withdrawRequests, null, 2)}</pre>`);
 });
 
 startGame();
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`VATWHITE Live on ${PORT}`));
+app.listen(process.env.PORT || 3000);
