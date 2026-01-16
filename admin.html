@@ -1,83 +1,23 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>VATWHITE ADMIN PANEL</title>
-    <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
-        .card { background: #2d2d2d; padding: 15px; margin-bottom: 20px; border-radius: 8px; border-left: 5px solid #00ff00; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #444; padding: 10px; text-align: left; }
-        th { background: #444; }
-        .btn-pay { background: #00ff00; color: black; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; }
-    </style>
-</head>
-<body>
-    <h1>VATWHITE Control Panel</h1>
-    
-    <div class="card">
-        <h3>Maombi ya Kutoa Pesa (Withdraw Requests)</h3>
-        <table id="withdrawTable">
-            <thead>
-                <tr>
-                    <th>Jina</th>
-                    <th>Namba ya Simu</th>
-                    <th>Kiasi (KES)</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
+<div class="section">
+    <h3>Search Mchezaji</h3>
+    <input type="text" id="search-input" onkeyup="searchUser()" placeholder="Andika jina au namba...">
+    <table id="search-results">
         </table>
-    </div>
+</div>
 
-    <div class="card">
-        <h3>Wachezaji Waliojisajili (Registered Users)</h3>
-        <table id="userTable">
-            <thead>
-                <tr>
-                    <th>Jina</th>
-                    <th>Namba ya Simu</th>
-                    <th>Salio (KES)</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <script>
-        // Pakua data kutoka kwenye server yako ya Render
-        async function loadAdminData() {
-            try {
-                const response = await fetch('/admin/data');
-                const data = await response.json();
-
-                // Jaza Table ya Withdrawals
-                const withdrawBody = document.querySelector('#withdrawTable tbody');
-                withdrawBody.innerHTML = data.withdraws.map(w => `
-                    <tr>
-                        <td>${w.name}</td>
-                        <td>${w.phone}</td>
-                        <td>${w.amount}</td>
-                        <td><button class="btn-pay" onclick="alert('Lipa ${w.phone} KES ${w.amount} kwa MPESA kisha mpe confirm')">Lipa Sasa</button></td>
-                    </tr>
-                `).join('');
-
-                // Jaza Table ya Users
-                const userBody = document.querySelector('#userTable tbody');
-                userBody.innerHTML = data.users.map(u => `
-                    <tr>
-                        <td>${u.name}</td>
-                        <td>${u.phone}</td>
-                        <td>${u.balance}</td>
-                    </tr>
-                `).join('');
-            } catch (err) {
-                console.error("Huwezi kupata data. Hakikisha DATABASE_URL imewekwa Render.");
-            }
-        }
-
-        // Pakua data kila baada ya sekunde 10
-        loadAdminData();
-        setInterval(loadAdminData, 10000);
-    </script>
-</body>
-</html>
+<script>
+    async function searchUser() {
+        const term = document.getElementById('search-input').value;
+        if(term.length < 2) return;
+        const res = await fetch(`/admin/search?term=${term}`);
+        const users = await res.json();
+        document.getElementById('search-results').innerHTML = users.map(u => `
+            <tr>
+                <td>${u.name}</td>
+                <td>${u.phone}</td>
+                <td>${u.balance}</td>
+                <td><button onclick="topUp('${u.phone}')">ADD CASH</button></td>
+            </tr>
+        `).join('');
+    }
+</script>
