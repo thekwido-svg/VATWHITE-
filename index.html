@@ -3,140 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VATWHITE - Safari Moja Kwa Wote</title>
+    <title>VATWHITE - Aviator</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: white; font-family: Arial, sans-serif; overflow: hidden; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: white; font-family: 'Roboto', sans-serif; overflow: hidden; }
+        .header { display: flex; justify-content: space-between; padding: 10px; background: #1b1b1b; border-bottom: 2px solid #333; align-items: center; }
+        .balance { color: #28a745; font-weight: bold; font-size: 18px; }
+        .dep-btn { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; }
         
-        /* Muonekano wa Game uwe karibu */
-        #game-container { width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
-        
-        .header { width: 100%; padding: 10px; display: flex; justify-content: space-between; background: #1a1a1a; font-size: 14px; border-bottom: 1px solid #333; }
-        .balance-box { color: #ffd700; font-weight: bold; }
-        .deposit-btn { background: #28a745; color: white; padding: 2px 8px; border-radius: 4px; text-decoration: none; font-size: 12px; }
+        /* Game Screen Area */
+        #game-view { width: 95%; height: 35vh; margin: 10px auto; background: radial-gradient(circle, #2c3e50, #000); border-radius: 15px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .multiplier { font-size: 60px; font-weight: bold; z-index: 10; color: white; }
+        .plane { position: absolute; width: 60px; left: 10%; bottom: 10%; transition: all 0.1s linear; }
 
-        .multiplier { font-size: 48px; font-weight: bold; color: #ffd700; margin-top: 50px; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
-        
-        /* Eneo la Ndege */
-        #canvas-area { width: 100%; height: 40vh; position: relative; margin-top: 20px; }
-        .rocket { position: absolute; width: 50px; transition: transform 0.1s; }
+        /* Betting Controls */
+        .controls-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
+        .bet-card { background: #1b1b1b; padding: 10px; border-radius: 10px; border: 1px solid #333; text-align: center; }
+        .amount-input { width: 80%; background: #000; border: 1px solid #444; color: white; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 18px; }
+        .btn-main { width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 20px; font-weight: bold; cursor: pointer; }
+        .btn-bet { background: #28a745; color: white; }
+        .btn-cashout { background: #ffc107; color: black; display: none; }
 
-        .controls { width: 90%; margin-top: auto; padding-bottom: 30px; display: flex; flex-direction: column; gap: 10px; }
-        .btn-bet { width: 100%; height: 50px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; }
-        .btn-withdraw { width: 100%; height: 50px; background: #ffc107; color: black; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; }
-        
-        /* Login Modal */
-        #auth-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
-        input { width: 80%; padding: 12px; margin: 5px; border-radius: 5px; border: none; }
+        /* Login Screen */
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .login-box { width: 85%; background: #1b1b1b; padding: 20px; border-radius: 15px; text-align: center; }
+        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 5px; border: none; background: #333; color: white; }
     </style>
 </head>
 <body>
 
-<div id="auth-modal">
-    <h2>VATWHITE LOGIN</h2>
-    <input type="text" id="phone" placeholder="Namba ya Simu">
-    <input type="password" id="pass" placeholder="Password">
-    <button class="btn-bet" onclick="handleAuth()">INGIA / JISAJILI</button>
+<div id="login-overlay">
+    <div class="login-box">
+        <h2 style="color:#d40000">VATWHITE</h2>
+        <input type="text" id="user-phone" placeholder="Namba ya Simu">
+        <input type="password" id="user-pass" placeholder="Password">
+        <button class="btn-main btn-bet" onclick="attemptLogin()">INGIA / JISAJILI</button>
+        <p id="error-msg" style="color:red; font-size:12px; display:none;">Jaribu tena, namba au password imekataa.</p>
+    </div>
 </div>
 
-<div id="game-container">
-    <div class="header">
-        <div><span id="display-name">Mchezaji</span> <a href="#" class="deposit-btn">DEPOSIT</a></div>
-        <div class="balance-box">KES <span id="balance">0.00</span></div>
-    </div>
+<div class="header">
+    <span id="player-name">User</span>
+    <div class="balance"><span id="user-balance">0.00</span> KES</div>
+    <button class="dep-btn">Deposit</button>
+</div>
 
-    <div class="multiplier" id="mult">1.00x</div>
+<div id="game-view">
+    <div class="multiplier" id="main-mult">1.00x</div>
+    <img src="https://i.ibb.co/V99n9vM/rocket.png" class="plane" id="plane-img">
+</div>
 
-    <div id="canvas-area">
-        <img src="https://i.ibb.co/V99n9vM/rocket.png" class="rocket" id="rocket" style="left: 10%; bottom: 10%;">
+<div class="controls-container">
+    <div class="bet-card">
+        <input type="number" class="amount-input" value="10.00">
+        <button class="btn-main btn-bet" id="bet-btn-1">BET</button>
     </div>
-
-    <div class="controls">
-        <button class="btn-bet" id="bet-btn" onclick="placeBet()">BET</button>
-        <button class="btn-withdraw" onclick="requestWithdraw()">WITHDRAW</button>
+    <div class="bet-card">
+        <input type="number" class="amount-input" value="10.00">
+        <button class="btn-main btn-bet" id="bet-btn-2">BET</button>
     </div>
-    <p style="font-size: 10px; color: #555;">Safari moja kwa wote: Juma, Otieno, Sarah...</p>
 </div>
 
 <script>
-    let user = null;
+    let userData = null;
 
-    // 1. Angalia kama amesha-login huko nyuma (Persistence)
-    window.onload = function() {
-        const savedUser = localStorage.getItem('vatwhite_user');
-        if (savedUser) {
-            user = JSON.parse(savedUser);
-            updateUI();
-            startBalanceSync(); // Vuta salio kutoka database
-        } else {
-            document.getElementById('auth-modal').style.display = 'flex';
-        }
-    };
+    // Kazi ya kuingia (Login)
+    async function attemptLogin() {
+        const phone = document.getElementById('user-phone').value;
+        const pass = document.getElementById('user-pass').value;
 
-    async function handleAuth() {
-        const phone = document.getElementById('phone').value;
-        const pass = document.getElementById('pass').value;
-        
-        // Hapa unawasiliana na server yako ya Render
-        const res = await fetch('/api/auth', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ phone, pass })
-        });
-        
-        const data = await res.json();
-        if (data.success) {
-            user = data.user;
-            localStorage.setItem('vatwhite_user', JSON.stringify(user));
-            document.getElementById('auth-modal').style.display = 'none';
-            updateUI();
-        } else {
-            alert("Kosa! Angalia namba au password.");
-        }
-    }
+        if(!phone || !pass) return alert("Jaza zote!");
 
-    function updateUI() {
-        document.getElementById('display-name').innerText = user.name;
-        document.getElementById('balance').innerText = parseFloat(user.balance).toFixed(2);
-    }
-
-    // 2. Vuta salio kila sekunde 5 (ili admin akiongeza ionekane papo hapo)
-    function startBalanceSync() {
-        setInterval(async () => {
-            const res = await fetch(`/api/user/${user.phone}`);
-            const data = await res.json();
-            if (data.balance !== undefined) {
-                user.balance = data.balance;
-                updateUI();
-            }
-        }, 5000);
-    }
-
-    // 3. Game Logic Fupi (Ndege Kupaa)
-    let count = 1.00;
-    setInterval(() => {
-        if (count < 100) {
-            count += 0.01;
-            document.getElementById('mult').innerText = count.toFixed(2) + "x";
-            // Sogeleza ndege juu
-            let rocket = document.getElementById('rocket');
-            rocket.style.left = (10 + (count * 2)) + "%";
-            rocket.style.bottom = (10 + (count * 3)) + "%";
-        }
-    }, 100);
-
-    async function requestWithdraw() {
-        const amount = prompt("Andika kiasi unachotaka kutoa:");
-        if (amount && amount <= user.balance) {
-            await fetch('/api/withdraw', {
+        try {
+            const response = await fetch('/api/login', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ phone: user.phone, amount })
+                body: JSON.stringify({ phone, pass })
             });
-            alert("Ombi lako limetumwa kwa Admin! Utatumiwa pesa kwa MPESA.");
-        } else {
-            alert("Salio halitoshi au kiasi si sahihi.");
+            
+            const data = await response.json();
+            if(data.success) {
+                userData = data.user;
+                localStorage.setItem('v_user', JSON.stringify(userData));
+                document.getElementById('login-overlay').style.display = 'none';
+                updatePlayerInfo();
+            } else {
+                document.getElementById('error-msg').style.display = 'block';
+            }
+        } catch(e) {
+            alert("Server haipatikani. Hakikisha Render iko Live!");
         }
     }
+
+    function updatePlayerInfo() {
+        document.getElementById('player-name').innerText = userData.name;
+        document.getElementById('user-balance').innerText = parseFloat(userData.balance).toFixed(2);
+    }
+
+    // Ndege kupaa (Animation)
+    let m = 1.00;
+    setInterval(() => {
+        m += 0.01;
+        document.getElementById('main-mult').innerText = m.toFixed(2) + "x";
+        let p = document.getElementById('plane-img');
+        p.style.left = (10 + (m * 2)) + "%";
+        p.style.bottom = (10 + (m * 3)) + "%";
+        if(m > 10) m = 1.00; // Reset kwa ajili ya demo
+    }, 100);
 </script>
 </body>
 </html>
