@@ -1,67 +1,38 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>VATWHITE ADMIN PANEL</title>
-    <style>
-        body { font-family: Arial; background: #121212; color: white; padding: 20px; }
-        .search-box { background: #1e1e1e; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        input { padding: 10px; width: 250px; border-radius: 5px; border: 1px solid #333; background: #000; color: white; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border: 1px solid #333; text-align: left; }
-        th { background: #222; color: #00ff00; }
-        .btn-topup { background: #28a745; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; }
-    </style>
-</head>
-<body>
-    <h2>VATWHITE CONTROL PANEL</h2>
-    <div class="search-box">
-        <label>Search Mchezaji (Jina au Namba):</label><br><br>
-        <input type="text" id="searchInput" placeholder="Andika jina au namba..." onkeyup="doSearch()">
-    </div>
-
-    <table>
+<body style="background:#000; color:white; font-family:sans-serif; padding:20px;">
+    <h2>VATWHITE ADMIN</h2>
+    <table border="1" style="width:100%; text-align:left;">
         <thead>
-            <tr>
-                <th>Jina Kamili</th>
-                <th>Namba ya Simu</th>
-                <th>Salio (KES)</th>
-                <th>Action</th>
-            </tr>
+            <tr><th>Jina</th><th>Simu</th><th>Salio</th><th>Action</th></tr>
         </thead>
-        <tbody id="resultsTable"></tbody>
+        <tbody id="list"></tbody>
     </table>
 
-    <script>
-        async function doSearch() {
-            const term = document.getElementById('searchInput').value;
-            if(term.length < 2) return;
-            
-            const res = await fetch(`/admin/search?term=${term}`);
-            const users = await res.json();
-            
-            const tableBody = document.getElementById('resultsTable');
-            tableBody.innerHTML = users.map(u => `
-                <tr>
-                    <td>${u.name}</td>
-                    <td>${u.phone}</td>
-                    <td style="color:#ffd700">${parseFloat(u.balance).toFixed(2)}</td>
-                    <td><button class="btn-topup" onclick="addMoney('${u.phone}')">ADD CASH</button></td>
-                </tr>
-            `).join('');
+<script>
+    async function load() {
+        const res = await fetch('/admin/users');
+        const users = await res.json();
+        document.getElementById('list').innerHTML = users.map(u => `
+            <tr>
+                <td>${u.name}</td>
+                <td>${u.phone}</td>
+                <td style="color:yellow">${u.balance}</td>
+                <td>
+                    <button onclick="upd('${u.phone}','add')" style="background:green; color:white;">+ PESA</button>
+                    <button onclick="upd('${u.phone}','sub')" style="background:red; color:white;">- PESA</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+    async function upd(phone, action) {
+        const amt = prompt("Kiasi:");
+        if(amt) {
+            await fetch('/admin/update-balance', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone, amount:amt, action}) });
+            load();
         }
-
-        async function addMoney(phone) {
-            const amount = prompt("Ongeza kiasi cha pesa:");
-            if(amount) {
-                await fetch('/admin/topup', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ phone, amount })
-                });
-                alert("Salio limeongezwa kwa " + phone);
-                doSearch();
-            }
-        }
-    </script>
+    }
+    setInterval(load, 3000);
+</script>
 </body>
 </html>
