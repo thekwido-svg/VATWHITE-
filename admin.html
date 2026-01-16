@@ -1,21 +1,75 @@
 <!DOCTYPE html>
-<html>
+<html lang="sw">
 <head>
-    <title>VAT WHITE - ADMIN</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VATWHITE - ADMIN PANEL</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h1 { color: #333; }
+        body { background-color: #0a0a0a; color: #eee; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        .header { background: #1a1a1a; padding: 20px; border-radius: 10px; border-left: 5px solid #facc15; margin-bottom: 20px; }
+        h1 { color: #facc15; margin: 0; font-size: 24px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; }
+        .stat-card h3 { margin: 0; font-size: 14px; color: #888; }
+        .stat-card p { margin: 5px 0 0; font-size: 20px; font-weight: bold; color: #22c55e; }
+        
+        table { width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 10px; overflow: hidden; }
+        th { background: #333; color: #facc15; text-align: left; padding: 15px; }
+        td { padding: 15px; border-bottom: 1px solid #222; }
+        .btn-action { background: #facc15; color: #000; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        input { background: #222; border: 1px solid #444; color: white; padding: 8px; border-radius: 5px; width: 100px; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Admin Control Panel</h1>
-        <p>Karibu kwenye dashibodi ya siri ya <strong>VAT WHITE</strong>.</p>
-        <hr>
-        <h3>Usimamizi wa Wachezaji</h3>
-        <p>Hapa utaona salio la wachezaji wote pindi database itakapokamilika.</p>
-        <button onclick="alert('Mfumo unajiunga na Postgres...')">Angalia Salio</button>
+
+    <div class="header">
+        <h1>VATWHITE DASHBOARD</h1>
+        <p>Usimamizi wa Mfumo na Wachezaji</p>
     </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Wachezaji Walio Online</h3>
+            <p id="onlineCount">412</p>
+        </div>
+        <div class="stat-card">
+            <h3>Jumla ya Madau (Leo)</h3>
+            <p>1,240,000 TZS</p>
+        </div>
+        <div class="stat-card">
+            <h3>Faida ya Mfumo</h3>
+            <p>320,500 TZS</p>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID ya Mchezaji</th>
+                <th>Salio (TZS)</th>
+                <th>Kiasi cha Kuongeza</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="userList">
+            <tr>
+                <td>USER_8892</td>
+                <td>15,400</td>
+                <td><input type="number" placeholder="Tsh"></td>
+                <td><button class="btn-action">ONGEZA PESA</button></td>
+            </tr>
+            <tr>
+                <td>USER_1023</td>
+                <td>2,100</td>
+                <td><input type="number" placeholder="Tsh"></td>
+                <td><button class="btn-action">ONGEZA PESA</button></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        // Hapa utaongeza kodi za kuunganisha na server.js ili kuona data halisi
+        console.log("VATWHITE Admin Panel Loaded Successfully");
+    </script>
 </body>
 </html>
