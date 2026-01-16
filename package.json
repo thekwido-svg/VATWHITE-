@@ -1,13 +1,15 @@
 {
-  "name": "vat-white",
+  "name": "vatwhite-aviator",
   "version": "1.0.0",
+  "description": "VATWHITE Aviator Game with Admin Search and Sync Multiplier",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "socket.io": "^4.6.1",
-    "pg": "^8.10.0"
-  }
+    "pg": "^8.11.3"
+  },
+  "author": "VATWHITE",
+  "license": "MIT"
 }
