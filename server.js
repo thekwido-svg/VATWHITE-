@@ -19,19 +19,15 @@ let gameStatus = "waiting";
 let currentMultiplier = 1.0;
 let crashPoint = 2.0; 
 let maxLimit = 20.34;
-let history = [];
 
 // Injini ya Mchezo
 setInterval(() => {
     if (gameStatus === "running") {
-        currentMultiplier += 0.01 * (currentMultiplier * 0.4); 
+        currentMultiplier += 0.01; 
         io.emit('tick', currentMultiplier.toFixed(2));
-
         if (currentMultiplier >= crashPoint) {
             gameStatus = "crashed";
-            history.unshift(currentMultiplier.toFixed(2));
-            if(history.length > 10) history.pop();
-            io.emit('crash', { m: currentMultiplier.toFixed(2), history });
+            io.emit('crash', currentMultiplier.toFixed(2));
             setTimeout(resetGame, 4000);
         }
     }
@@ -45,22 +41,21 @@ function resetGame() {
     setTimeout(() => { gameStatus = "running"; }, 3000);
 }
 
-// Admin API: Ongeza/Punguza Pesa
+// Admin API
 app.post('/update-balance', async (req, res) => {
     const { phone, amount } = req.body;
     try {
-        await pool.query(
-            "UPDATE users SET balance = jsonb_set(balance, '{gold}', (COALESCE(balance->>'gold', '0')::numeric + $1)::text::jsonb) WHERE phone = $2",
-            [amount, phone]
-        );
+        await pool.query("UPDATE users SET balance = jsonb_set(balance, '{gold}', (COALESCE(balance->>'gold', '0')::numeric + $1)::text::jsonb) WHERE phone = $2", [amount, phone]);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.get('/get-users', async (req, res) => {
-    const result = await pool.query("SELECT * FROM users");
-    res.json(result.rows);
+    try {
+        const result = await pool.query("SELECT * FROM users");
+        res.json(result.rows);
+    } catch (err) { res.status(500).json([]); }
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('Elon Musk Engine Online!'));
+server.listen(PORT, () => console.log('VATWHITE Engine Online!'));
