@@ -2,62 +2,76 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VATWHITE</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow-x: hidden; }
-        .header { display: flex; justify-content: space-between; padding: 12px; background: #111; border-bottom: 2px solid gold; align-items: center; }
-        .logo-box { display: flex; align-items: center; gap: 10px; }
-        .logo-img { width: 35px; border-radius: 50%; border: 1px solid gold; }
-        #canvas { height: 260px; position: relative; background: radial-gradient(circle, #222, #000); overflow: hidden; margin: 10px; border-radius: 15px; }
-        #multiplier { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 3.8rem; font-weight: bold; color: gold; text-shadow: 0 0 15px gold; }
-        .bet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
-        .bet-card { background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px solid #333; text-align: center; }
-        .btn-bet { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 8px; }
-        .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #111; border-top: 1px solid #333; }
-        .nav-btn { flex: 1; padding: 15px; text-align: center; color: gold; font-weight: bold; cursor: pointer; }
+        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; }
+        .auth-screen { padding: 20px; text-align: center; }
+        .game-screen { display: none; }
+        input { width: 90%; padding: 12px; margin: 8px 0; background: #1a1a1a; border: 1px solid gold; color: #fff; border-radius: 5px; }
+        .btn { width: 95%; padding: 15px; background: gold; color: black; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; }
+        .header { display: flex; justify-content: space-between; padding: 10px; background: #1b1c1d; border-bottom: 2px solid gold; }
+        #stage { height: 260px; position: relative; background: radial-gradient(circle, #222, #000); margin: 5px; border-radius: 10px; }
+        #multiplier { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 3.5rem; font-weight: 900; }
+        .bet-area { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
+        .bet-card { background: #141516; padding: 10px; border-radius: 10px; border: 1px solid #333; }
+        #plane-wrap { position: absolute; bottom: 20px; left: 10%; transition: transform 0.1s; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo-box">
-            <img src="1000002704.jpg" class="logo-img">
-            <span style="color:gold; font-weight:bold; font-size: 1.1rem;">VATWHITE</span>
-        </div>
-        <div style="color:gold; font-weight:bold;">TSH <span id="balance">0.00</span></div>
+    <div id="auth" class="auth-screen">
+        <img src="1000002704.jpg" style="width:100px; border-radius:50%;">
+        <h2>VATWHITE JOIN</h2>
+        <input type="text" id="fname" placeholder="First Name">
+        <input type="text" id="phone" placeholder="Phone (e.g 07...)">
+        <input type="password" id="pass" placeholder="Password">
+        <button class="btn" onclick="register()">REGISTER / LOGIN</button>
     </div>
 
-    <div id="canvas">
-        <div id="multiplier">1.00x</div>
-        <div id="plane" style="position:absolute; bottom:20px; left:50%; font-size:45px;">✈️</div>
-    </div>
-
-    <div class="bet-grid">
-        <div class="bet-card">
-            <input type="number" value="500" style="width:80%; text-align:center; background:#000; color:gold; border:1px solid #444; padding:5px;">
-            <button class="btn-bet">BET 1</button>
+    <div id="game" class="game-screen">
+        <div class="header">
+            <div style="color:gold; font-weight:bold;"><img src="1000002704.jpg" width="25"> VATWHITE</div>
+            <div style="color:#28a745;"><span id="u_bal">0.00</span> KES</div>
         </div>
-        <div class="bet-card">
-            <input type="number" value="500" style="width:80%; text-align:center; background:#000; color:gold; border:1px solid #444; padding:5px;">
-            <button class="btn-bet">BET 2</button>
+        <div id="stage">
+            <div id="multiplier">1.00x</div>
+            <div id="plane-wrap"><img src="1000002704.jpg" width="60" style="border-radius:50%;"></div>
+            <svg style="position:absolute; width:100%; height:100%;"><path id="gold-path" d="" fill="none" stroke="gold" stroke-width="3"/></svg>
         </div>
-    </div>
-
-    <div class="nav">
-        <div class="nav-btn" onclick="alert('Lipa na M-PESA kwenda: 0702170114\nKisha subiri salio liongezwe na Admin.')">DEPOSIT</div>
-        <div class="nav-btn" onclick="alert('Weka kiasi unachotaka kutoa...')">WITHDRAW</div>
+        <div class="bet-area">
+            <div class="bet-card"><button class="btn" style="background:#28a745; color:white;">BET KES 10</button></div>
+            <div class="bet-card"><button class="btn" style="background:#28a745; color:white;">BET KES 50</button></div>
+        </div>
+        <div style="padding:15px; text-align:center; color:gold; font-weight:bold;" onclick="alert('Lipa na M-PESA: 0702170114')">DEPOSIT</div>
     </div>
 
     <script>
         const socket = io();
-        socket.on('tick', (m) => { document.getElementById('multiplier').innerText = m + "x"; });
-        socket.on('crash', (m) => { 
-            document.getElementById('multiplier').style.color = "red";
-            document.getElementById('plane').innerText = "💥";
+        let x = 0; let y = 0;
+
+        async function register() {
+            const data = { firstname: document.getElementById('fname').value, phone: document.getElementById('phone').value, password: document.getElementById('pass').value };
+            await fetch('/signup', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            document.getElementById('auth').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+        }
+
+        socket.on('tick', (m) => {
+            document.getElementById('multiplier').innerText = m + "x";
+            x += 1.5; y += 1.2;
+            document.getElementById('plane-wrap').style.transform = `translate(${x}px, -${y}px)`;
+            document.getElementById('gold-path').setAttribute('d', `M 0 260 Q ${x/2} 260, ${x+30} ${260-y}`);
         });
+
+        socket.on('crash', () => {
+            document.getElementById('multiplier').style.color = 'red';
+            document.getElementById('plane-wrap').innerHTML = '<span style="font-size:40px">💥</span>';
+        });
+
         socket.on('new_game', () => {
-            document.getElementById('multiplier').style.color = "gold";
-            document.getElementById('plane').innerText = "✈️";
+            x = 0; y = 0;
+            document.getElementById('multiplier').style.color = 'white';
+            document.getElementById('plane-wrap').innerHTML = '<img src="1000002704.jpg" width="60" style="border-radius:50%;">';
+            document.getElementById('gold-path').setAttribute('d', '');
         });
     </script>
 </body>
