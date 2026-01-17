@@ -5,59 +5,49 @@
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; }
-        .auth-screen { padding: 40px; text-align: center; }
-        .game-screen { display: none; }
-        
-        /* Header */
-        .header { display: flex; justify-content: space-between; padding: 12px; background: #000; border-bottom: 2px solid gold; }
-        
-        /* Game Stage */
-        #stage { height: 320px; position: relative; background: #000; overflow: hidden; border-bottom: 1px solid #222; }
+        .header { display: flex; justify-content: space-between; padding: 12px; border-bottom: 2px solid gold; }
+        #stage { height: 320px; position: relative; background: #000; overflow: hidden; }
         #multiplier { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 4.5rem; font-weight: 900; z-index: 10; }
         #rocket-wrap { position: absolute; bottom: 20px; left: 10%; z-index: 5; font-size: 60px; will-change: transform; }
-        
-        /* Vitufe 4 na Layout */
+        .history-container { display: flex; gap: 5px; padding: 10px; justify-content: center; background: #111; }
+        .hist-item { padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; border: 1px solid #444; }
         .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
-        .btn { padding: 18px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; color: white; cursor: pointer; text-transform: uppercase; }
+        .btn { padding: 18px; border: none; border-radius: 8px; font-weight: bold; color: white; cursor: pointer; }
         .btn-bet { background: #28a745; }
         .btn-withdraw { background: #d91d1d; }
-        .btn-deposit { background: linear-gradient(to right, gold, #b8860b); color: black; }
-        .info-box { background: rgba(255,215,0,0.1); border: 1px solid gold; padding: 10px; border-radius: 5px; font-size: 0.85rem; text-align: center; color: gold; }
-        
-        input { width: 90%; padding: 15px; margin: 10px 0; background: #111; color: white; border: 1px solid gold; border-radius: 5px; }
+        .btn-deposit { background: gold; color: black; }
+        input { width: 90%; padding: 15px; margin: 10px; background: #111; color: #fff; border: 1px solid gold; }
     </style>
 </head>
 <body onload="checkUser()">
 
-    <div id="auth" class="auth-screen">
+    <div id="auth" style="padding:40px; text-align:center;">
         <img src="1000002704.jpg" width="100" style="border-radius:50%;">
-        <h2 style="color:gold;">VATWHITE JOIN</h2>
-        <input type="text" id="phone" placeholder="Phone Number (e.g 07...)">
-        <button class="btn btn-bet" style="width:100%" onclick="login()">START PLAYING</button>
+        <h2>VATWHITE JOIN</h2>
+        <input type="text" id="phone" placeholder="Phone Number">
+        <button class="btn btn-bet" style="width:100%" onclick="login()">PLAY NOW</button>
     </div>
 
-    <div id="game" class="game-screen">
+    <div id="game" style="display:none;">
         <div class="header">
-            <div style="color:gold; font-weight:bold; display:flex; align-items:center; gap:5px;">
-                <img src="1000002704.jpg" width="25" style="border-radius:50%;"> VATWHITE
-            </div>
+            <div style="color:gold; font-weight:bold;">VATWHITE</div>
             <div style="color:#28a745; font-weight:bold;"><span id="bal_val">0.00</span> KES</div>
         </div>
 
         <div id="stage">
             <div id="multiplier">1.00x</div>
             <div id="rocket-wrap">🚀</div>
-            <svg style="position:absolute; width:100%; height:100%; top:0; left:0;">
-                <path id="gold-path" d="" fill="none" stroke="gold" stroke-width="4"/>
-            </svg>
+            <svg style="position:absolute; width:100%; height:100%;"><path id="gold-path" d="" fill="none" stroke="gold" stroke-width="4"/></svg>
         </div>
+
+        <div class="history-container" id="history-list"></div>
 
         <div class="controls">
             <button class="btn btn-bet" onclick="placeBet(20)">BET KES 20</button>
             <button class="btn btn-withdraw" onclick="withdraw()">WITHDRAW</button>
             <button class="btn btn-bet" onclick="placeBet(50)">BET KES 50</button>
-            <div class="info-box">Lipa na M-PESA kwenda:<br>0702170114</div>
-            <button class="btn btn-deposit" onclick="alert('Tuma pesa kwenda 0702170114 na usubiri salio liongezeke.')">DEPOSIT</button>
+            <div style="border:1px solid gold; padding:5px; font-size:0.7rem; color:gold; text-align:center;">Lipa M-PESA:<br>0702170114</div>
+            <button class="btn btn-deposit" onclick="alert('Tuma 0702170114')">DEPOSIT</button>
             <button class="btn" style="background:#333" onclick="logout()">LOGOUT</button>
         </div>
     </div>
@@ -66,81 +56,52 @@
 
     <script>
         const socket = io();
-        let x = 0; let y = 0;
+        let x = 0, y = 0;
         const sound = document.getElementById('sound');
 
-        // Angalia kama mtumiaji ameshaingia (Auto-login)
         function checkUser() {
-            const phone = localStorage.getItem('vatPhone');
-            if(phone) {
+            if(localStorage.getItem('vatPhone')) {
                 document.getElementById('auth').style.display = 'none';
                 document.getElementById('game').style.display = 'block';
-                fetchBalance(phone);
+                fetchBalance(localStorage.getItem('vatPhone'));
             }
         }
 
         async function login() {
             const phone = document.getElementById('phone').value;
-            if(!phone) return alert("Weka namba ya simu!");
-            await fetch('/signup', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ phone, firstname: 'User', password: '123' })
-            });
+            await fetch('/signup', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ phone }) });
             localStorage.setItem('vatPhone', phone);
             checkUser();
         }
 
         function logout() { localStorage.removeItem('vatPhone'); location.reload(); }
 
-        async function fetchBalance(phone) {
-            const res = await fetch('/get-balance/' + phone);
-            const data = await res.json();
-            document.getElementById('bal_val').innerText = data.balance;
+        async function fetchBalance(p) {
+            const res = await fetch('/get-balance/' + p);
+            const d = await res.json();
+            document.getElementById('bal_val').innerText = d.balance;
         }
 
         async function placeBet(amt) {
-            const phone = localStorage.getItem('vatPhone');
-            await fetch('/place-bet', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ phone, amount: amt })
-            });
-            alert("Bet ya KES " + amt + " imewekwa! Bahati njema.");
+            await fetch('/place-bet', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ phone: localStorage.getItem('vatPhone'), amount: amt }) });
+            alert("Bet Set!");
         }
 
         async function withdraw() {
-            let amt = prompt("Weka kiasi unachotoa (KES):");
-            if(amt) {
-                await fetch('/withdraw', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ phone: localStorage.getItem('vatPhone'), amount: amt })
-                });
-                alert("Ombi limetumwa kwa Admin!");
-            }
+            let a = prompt("Amount:");
+            if(a) { await fetch('/withdraw', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ phone: localStorage.getItem('vatPhone'), amount: a }) }); alert("Sent!"); }
         }
 
-        // --- MWENDO WA ROCKET (Smooth & Fast) ---
         socket.on('tick', (m) => {
             document.getElementById('multiplier').innerText = m + "x";
             sound.play();
-            
-            // Kasi ya kusogea
-            x += 2.2; 
-            y += 1.6;
-            
-            const rocket = document.getElementById('rocket-wrap');
-            // Hii linear transition inafanya rocket isigwame-gwame
-            rocket.style.transition = "transform 0.08s linear"; 
-            rocket.style.transform = `translate(${x}px, -${y}px)`;
-            
-            // Kuchora mstari wa dhahabu
-            const path = document.getElementById('gold-path');
-            path.setAttribute('d', `M 0 320 Q ${x/2} 320, ${x+40} ${320-y}`);
+            x += 2.2; y += 1.6;
+            const r = document.getElementById('rocket-wrap');
+            r.style.transform = `translate(${x}px, -${y}px)`;
+            document.getElementById('gold-path').setAttribute('d', `M 0 320 Q ${x/2} 320, ${x+40} ${320-y}`);
         });
 
-        socket.on('crash', (m) => {
+        socket.on('crash', () => {
             sound.pause(); sound.currentTime = 0;
             document.getElementById('multiplier').style.color = 'red';
             document.getElementById('rocket-wrap').innerHTML = '💥';
@@ -150,9 +111,21 @@
             x = 0; y = 0;
             document.getElementById('multiplier').style.color = 'white';
             document.getElementById('rocket-wrap').innerHTML = '🚀';
-            document.getElementById('rocket-wrap').style.transform = `translate(0px, 0px)`;
+            document.getElementById('rocket-wrap').style.transform = `translate(0,0)`;
             document.getElementById('gold-path').setAttribute('d', '');
-            fetchBalance(localStorage.getItem('vatPhone')); // Refresh salio
+            fetchBalance(localStorage.getItem('vatPhone'));
+        });
+
+        socket.on('history', (data) => {
+            const l = document.getElementById('history-list');
+            l.innerHTML = '';
+            data.forEach(v => {
+                const i = document.createElement('div');
+                i.className = 'hist-item';
+                i.style.color = v >= 2 ? '#2ecc71' : '#ff4d4d';
+                i.innerText = v + 'x';
+                l.appendChild(i);
+            });
         });
     </script>
 </body>
