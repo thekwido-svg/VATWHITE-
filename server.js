@@ -1,86 +1,74 @@
 const express = require('express');
 const { Pool } = require('pg');
+const path = require('path');
 const app = express();
-app.use(express.json());
-app.use(express.static('.'));
 
+// Inasoma DATABASE_URL kutoka kwenye Environment Variables uliyoweka Render
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
-// Kuunda Jedwali la Database
-const initDB = async () => {
+app.use(express.json());
+app.use(express.static(path.join(__dirname, '/')));
+
+// Inatengeneza Table ya wateja moja kwa moja ikikosekana
+const initDb = async () => {
+  try {
     await pool.query(`
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            name TEXT NOT NULL,
-            phone TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            balance DECIMAL DEFAULT 0.00
-        );
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        firstname TEXT,
+        lastname TEXT,
+        phone TEXT UNIQUE,
+        password TEXT,
+        balance JSONB DEFAULT '{"gold": 0}'
+      )
     `);
+    console.log("Database iko tayari!");
+  } catch (err) {
+    console.error("Database Error:", err);
+  }
 };
-initDB();
+initDb();
 
-// Mfumo wa Mpira na Multiplier (House Edge / Faida ya Admin)
-let multiplier = 1.00;
-let crashPoint = 1.50;
-
-function nextCrash() {
-    let r = Math.random();
-    // 35% ya muda mchezo unakatika mapema (1.00x - 1.25x) ili Admin upate faida
-    if (r < 0.35) return 1.00 + (Math.random() * 0.25);
-    // 65% ya muda mchezo unaenda juu (Bahati na sibu)
-    return 1.25 + (Math.random() * 9.0);
-}
-
-crashPoint = nextCrash();
-
-setInterval(() => {
-    if (multiplier < crashPoint) {
-        multiplier += 0.02;
+// Sehemu ya Kusajili na Kuingia (Login/Register)
+app.post('/auth', async (req, res) => {
+  const { firstname, lastname, phone, password } = req.body;
+  try {
+    const userExist = await pool.query('SELECT * FROM users WHERE phone = $1', [phone]);
+    
+    if (userExist.rows.length > 0) {
+      if (userExist.rows[0].password === password) {
+        return res.json({ success: true, user: userExist.rows[0] });
+      } else {
+        return res.json({ success: false, message: "Password siyo sahihi!" });
+      }
     } else {
-        multiplier = 1.00; // Mpira unapasuka
-        crashPoint = nextCrash();
+      const newUser = await pool.query(
+        'INSERT INTO users (firstname, lastname, phone, password) VALUES ($1, $2, $3, $4) RETURNING *',
+        [firstname, lastname, phone, password]
+      );
+      return res.json({ success: true, user: newUser.rows[0] });
     }
-}, 100);
-
-app.get('/api/game-state', (req, res) => {
-    res.json({ multiplier: parseFloat(multiplier.toFixed(2)) });
+  } catch (err) {
+    res.json({ success: false, message: "Tatizo la Database!" });
+  }
 });
 
-// Usajili na Login (Inatambua majina mawili)
-app.post('/api/register', async (req, res) => {
-    const { firstName, lastName, phone, password } = req.body;
-    const fullName = `${firstName} ${lastName}`;
-    try {
-        const result = await pool.query(
-            "INSERT INTO users (name, phone, password, balance) VALUES ($1, $2, $3, 0) RETURNING *",
-            [fullName, phone, password]
-        );
-        res.json({ success: true, user: result.rows[0] });
-    } catch (err) {
-        const user = await pool.query("SELECT * FROM users WHERE phone = $1", [phone]);
-        if(user.rows[0] && user.rows[0].password === password) {
-            res.json({ success: true, user: user.rows[0] });
-        } else {
-            res.json({ success: false, message: "Login Failed" });
-        }
-    }
-});
-
-// Admin Update (Pesa)
-app.post('/admin/update-balance', async (req, res) => {
-    const { phone, amount, action } = req.body;
-    const val = action === 'add' ? amount : -amount;
-    await pool.query("UPDATE users SET balance = balance + $1 WHERE phone = $2", [val, phone]);
-    res.json({ success: true });
-});
-
-app.get('/admin/users', async (req, res) => {
-    const result = await pool.query("SELECT * FROM users ORDER BY id DESC");
+// Sehemu ya Admin kuona wateja
+app.get('/get-users', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM users');
     res.json(result.rows);
+  } catch (err) {
+    res.status(500).send("Error");
+  }
 });
 
-app.listen(process.env.PORT || 3000);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server inapumua kwenye port ${PORT}`);
+});
