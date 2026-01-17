@@ -5,7 +5,10 @@ const socketIo = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  cors: { origin: "*" },
+  pingTimeout: 1000, // Inapunguza kulega-lega (lag)
+});
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -15,48 +18,51 @@ const pool = new Pool({
 app.use(express.json());
 app.use(express.static(__dirname + '/'));
 
-// --- LOGIC YA ROCKET (Live Engine) ---
 let currentMultiplier = 1.0;
 let gameStatus = "running"; 
-let crashPoint = (Math.random() * 10 + 1.1).toFixed(2);
+let activeBets = []; // Inafuatilia dau za watu live
+
+// --- SMART CRASH ALGORITHM ---
+function generateSmartCrashPoint() {
+    let rand = Math.random() * 100;
+    
+    // Angalia kama kuna bet kubwa ya zaidi ya 200
+    let hasBigBet = activeBets.some(b => b.amount > 200);
+    if (hasBigBet && Math.random() < 0.8) return 1.00; // 80% chance ya kulipuka 1.00 kama kuna dau kubwa
+
+    if (rand < 40) return (Math.random() * 0.05 + 1.01).toFixed(2); // 40% chance ya 1.01 - 1.06 (Nyingi)
+    if (rand < 85) return (Math.random() * 2.9 + 1.1).toFixed(2);   // 45% chance ya chini ya 4.00
+    if (rand < 98) return (Math.random() * 5 + 5).toFixed(2);      // 13% chance ya 5x - 10x
+    return (Math.random() * 10 + 10).toFixed(2);                   // 2% tu chance ya 10x - 20x
+}
+
+let crashPoint = generateSmartCrashPoint();
 
 setInterval(() => {
     if (gameStatus === "running") {
-        let speedInc = currentMultiplier < 3 ? 0.03 : 0.07; 
-        currentMultiplier = (parseFloat(currentMultiplier) + speedInc).toFixed(2);
+        // Speed ya kupanda: Inaanza taratibu kisha inaongezeka kuzuia kugwama
+        let increment = currentMultiplier < 2 ? 0.01 : (currentMultiplier < 5 ? 0.03 : 0.08);
+        currentMultiplier = (parseFloat(currentMultiplier) + increment).toFixed(2);
+        
         io.emit('tick', currentMultiplier);
+
         if (parseFloat(currentMultiplier) >= parseFloat(crashPoint)) {
             gameStatus = "crashed";
             io.emit('crash', currentMultiplier);
+            activeBets = []; // Safisha dau baada ya kulipuka
             setTimeout(() => {
                 currentMultiplier = 1.0;
-                crashPoint = (Math.random() * 15 + 1.05).toFixed(2);
+                crashPoint = generateSmartCrashPoint();
                 gameStatus = "running";
                 io.emit('new_game');
             }, 4000);
         }
     }
-}, 80);
+}, 60); // Ticks fupi zaidi (60ms) hufanya Rocket iende bila kugwama
 
-// --- USER & BALANCE ACTIONS ---
-app.post('/signup', async (req, res) => {
-    const { phone, password, firstname } = req.body;
-    try {
-        const check = await pool.query("SELECT * FROM users WHERE phone = $1", [phone]);
-        if(check.rows.length > 0) return res.json({ success: true, user: check.rows[0] });
-        const newUser = await pool.query("INSERT INTO users (firstname, phone, password, balance) VALUES ($1, $2, $3, '{\"gold\": 0}') RETURNING *", [firstname, phone, password]);
-        res.json({ success: true, user: newUser.rows[0] });
-    } catch (err) { res.status(500).send(err.message); }
-});
-
-app.get('/get-balance/:phone', async (req, res) => {
-    const result = await pool.query("SELECT balance->>'gold' as bal FROM users WHERE phone = $1", [req.params.phone]);
-    res.json({ balance: result.rows[0]?.bal || 0 });
-});
-
-app.post('/withdraw', async (req, res) => {
-    const { phone, amount } = req.body;
-    io.emit('admin_notification', { message: `KES ${amount} Withdraw kutoka ${phone}` });
+// Endpoint ya kuweka bet (Ili server ijue dau ni kiasi gani)
+app.post('/place-bet', (req, res) => {
+    activeBets.push({ phone: req.body.phone, amount: req.body.amount });
     res.json({ success: true });
 });
 
