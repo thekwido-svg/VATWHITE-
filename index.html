@@ -5,44 +5,59 @@
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; }
+        .auth-screen { padding: 40px; text-align: center; }
+        .game-screen { display: none; }
+        
+        /* Header */
         .header { display: flex; justify-content: space-between; padding: 12px; background: #000; border-bottom: 2px solid gold; }
-        #stage { height: 320px; position: relative; background: #000; overflow: hidden; }
-        #multiplier { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 4.5rem; font-weight: 900; }
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
-        .btn { padding: 18px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; color: white; cursor: pointer; }
+        
+        /* Game Stage */
+        #stage { height: 320px; position: relative; background: #000; overflow: hidden; border-bottom: 1px solid #222; }
+        #multiplier { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 4.5rem; font-weight: 900; z-index: 10; }
+        #rocket-wrap { position: absolute; bottom: 20px; left: 10%; z-index: 5; font-size: 60px; will-change: transform; }
+        
+        /* Vitufe 4 na Layout */
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
+        .btn { padding: 18px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; color: white; cursor: pointer; text-transform: uppercase; }
         .btn-bet { background: #28a745; }
         .btn-withdraw { background: #d91d1d; }
         .btn-deposit { background: linear-gradient(to right, gold, #b8860b); color: black; }
-        #rocket-wrap { position: absolute; bottom: 20px; left: 10%; z-index: 5; }
-        .info-box { background: rgba(255,255,255,0.05); border: 1px solid #333; padding: 8px; border-radius: 5px; font-size: 0.8rem; margin-top: 5px; }
+        .info-box { background: rgba(255,215,0,0.1); border: 1px solid gold; padding: 10px; border-radius: 5px; font-size: 0.85rem; text-align: center; color: gold; }
+        
+        input { width: 90%; padding: 15px; margin: 10px 0; background: #111; color: white; border: 1px solid gold; border-radius: 5px; }
     </style>
 </head>
 <body onload="checkUser()">
-    <div id="auth" style="padding:40px; text-align:center;">
+
+    <div id="auth" class="auth-screen">
         <img src="1000002704.jpg" width="100" style="border-radius:50%;">
-        <h2>VATWHITE JOIN</h2>
-        <input type="text" id="phone" placeholder="Phone Number" style="width:90%; padding:15px; margin:10px 0; background:#111; color:white; border:1px solid gold;">
+        <h2 style="color:gold;">VATWHITE JOIN</h2>
+        <input type="text" id="phone" placeholder="Phone Number (e.g 07...)">
         <button class="btn btn-bet" style="width:100%" onclick="login()">START PLAYING</button>
     </div>
 
-    <div id="game" style="display:none;">
+    <div id="game" class="game-screen">
         <div class="header">
-            <div style="color:gold; font-weight:bold;">VATWHITE</div>
+            <div style="color:gold; font-weight:bold; display:flex; align-items:center; gap:5px;">
+                <img src="1000002704.jpg" width="25" style="border-radius:50%;"> VATWHITE
+            </div>
             <div style="color:#28a745; font-weight:bold;"><span id="bal_val">0.00</span> KES</div>
         </div>
 
         <div id="stage">
             <div id="multiplier">1.00x</div>
-            <div id="rocket-wrap" style="font-size: 60px;">🚀</div>
-            <svg style="position:absolute; width:100%; height:100%;"><path id="gold-path" d="" fill="none" stroke="gold" stroke-width="4"/></svg>
+            <div id="rocket-wrap">🚀</div>
+            <svg style="position:absolute; width:100%; height:100%; top:0; left:0;">
+                <path id="gold-path" d="" fill="none" stroke="gold" stroke-width="4"/>
+            </svg>
         </div>
 
         <div class="controls">
-            <button class="btn btn-bet">BET KES 20</button>
+            <button class="btn btn-bet" onclick="placeBet(20)">BET KES 20</button>
             <button class="btn btn-withdraw" onclick="withdraw()">WITHDRAW</button>
-            <button class="btn btn-bet">BET KES 50</button>
+            <button class="btn btn-bet" onclick="placeBet(50)">BET KES 50</button>
             <div class="info-box">Lipa na M-PESA kwenda:<br>0702170114</div>
-            <button class="btn btn-deposit" onclick="alert('Lipa 0702170114 kisha subiri salio.')">DEPOSIT</button>
+            <button class="btn btn-deposit" onclick="alert('Tuma pesa kwenda 0702170114 na usubiri salio liongezeke.')">DEPOSIT</button>
             <button class="btn" style="background:#333" onclick="logout()">LOGOUT</button>
         </div>
     </div>
@@ -54,6 +69,7 @@
         let x = 0; let y = 0;
         const sound = document.getElementById('sound');
 
+        // Angalia kama mtumiaji ameshaingia (Auto-login)
         function checkUser() {
             const phone = localStorage.getItem('vatPhone');
             if(phone) {
@@ -65,8 +81,8 @@
 
         async function login() {
             const phone = document.getElementById('phone').value;
-            if(!phone) return;
-            const res = await fetch('/signup', {
+            if(!phone) return alert("Weka namba ya simu!");
+            await fetch('/signup', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ phone, firstname: 'User', password: '123' })
@@ -83,15 +99,48 @@
             document.getElementById('bal_val').innerText = data.balance;
         }
 
+        async function placeBet(amt) {
+            const phone = localStorage.getItem('vatPhone');
+            await fetch('/place-bet', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ phone, amount: amt })
+            });
+            alert("Bet ya KES " + amt + " imewekwa! Bahati njema.");
+        }
+
+        async function withdraw() {
+            let amt = prompt("Weka kiasi unachotoa (KES):");
+            if(amt) {
+                await fetch('/withdraw', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ phone: localStorage.getItem('vatPhone'), amount: amt })
+                });
+                alert("Ombi limetumwa kwa Admin!");
+            }
+        }
+
+        // --- MWENDO WA ROCKET (Smooth & Fast) ---
         socket.on('tick', (m) => {
             document.getElementById('multiplier').innerText = m + "x";
             sound.play();
-            x += 2.2; y += 1.6;
-            document.getElementById('rocket-wrap').style.transform = `translate(${x}px, -${y}px)`;
-            document.getElementById('gold-path').setAttribute('d', `M 0 320 Q ${x/2} 320, ${x+40} ${320-y}`);
+            
+            // Kasi ya kusogea
+            x += 2.2; 
+            y += 1.6;
+            
+            const rocket = document.getElementById('rocket-wrap');
+            // Hii linear transition inafanya rocket isigwame-gwame
+            rocket.style.transition = "transform 0.08s linear"; 
+            rocket.style.transform = `translate(${x}px, -${y}px)`;
+            
+            // Kuchora mstari wa dhahabu
+            const path = document.getElementById('gold-path');
+            path.setAttribute('d', `M 0 320 Q ${x/2} 320, ${x+40} ${320-y}`);
         });
 
-        socket.on('crash', () => {
+        socket.on('crash', (m) => {
             sound.pause(); sound.currentTime = 0;
             document.getElementById('multiplier').style.color = 'red';
             document.getElementById('rocket-wrap').innerHTML = '💥';
@@ -101,7 +150,9 @@
             x = 0; y = 0;
             document.getElementById('multiplier').style.color = 'white';
             document.getElementById('rocket-wrap').innerHTML = '🚀';
+            document.getElementById('rocket-wrap').style.transform = `translate(0px, 0px)`;
             document.getElementById('gold-path').setAttribute('d', '');
+            fetchBalance(localStorage.getItem('vatPhone')); // Refresh salio
         });
     </script>
 </body>
