@@ -5,76 +5,60 @@
     <title>VATWHITE Official</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { margin: 0; background: #0b0b0b; color: #fff; font-family: 'Segoe UI', sans-serif; }
-        .top-bar { display: flex; justify-content: space-between; padding: 10px; background: #151515; border-bottom: 2px solid #ffd700; }
-        .logo { color: #ffd700; font-weight: 900; letter-spacing: 2px; display: flex; align-items: center; }
-        .balance { background: #222; padding: 5px 15px; border-radius: 20px; color: #ffd700; border: 1px solid #ffd700; }
-        
-        #game-canvas { height: 250px; position: relative; background: radial-gradient(circle, #1a1a1a, #000); overflow: hidden; }
-        #multiplier { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 4rem; font-weight: bold; text-shadow: 0 0 20px gold; z-index: 10; }
-        #ball { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 60px; z-index: 5; transition: bottom 0.1s linear; }
-        #gold-line { position: absolute; bottom: 45px; left: 50%; width: 4px; background: linear-gradient(to top, #ffd700, transparent); transform: translateX(-50%); box-shadow: 0 0 15px #ffd700; }
-
-        .bet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
-        .bet-box { background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .input-bet { width: 80%; background: #000; color: gold; border: 1px solid #444; padding: 8px; border-radius: 5px; text-align: center; font-weight: bold; }
-        .btn-action { width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .btn-bet { background: #28a745; color: #fff; }
-        .btn-cash { background: #ffd700; color: #000; box-shadow: 0 0 10px #ffd700; }
-
-        .nav-footer { position: fixed; bottom: 0; width: 100%; display: flex; background: #151515; border-top: 1px solid #333; }
-        .nav-item { flex: 1; padding: 15px; text-align: center; font-size: 0.8rem; color: #888; cursor: pointer; }
-        .nav-active { color: #ffd700; }
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #1a1a1a; border-bottom: 2px solid gold; }
+        .logo-area { display: flex; align-items: center; gap: 8px; }
+        .logo-img { width: 35px; border-radius: 50%; border: 1px solid gold; }
+        .game-card { height: 280px; position: relative; background: radial-gradient(circle, #222, #000); overflow: hidden; margin: 5px; border-radius: 10px; }
+        #multiplier { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 3.5rem; font-weight: bold; color: gold; text-shadow: 0 0 15px gold; }
+        .bet-area { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
+        .bet-box { background: #151515; padding: 10px; border-radius: 10px; border: 1px solid #333; text-align: center; }
+        .btn-bet { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-weight: bold; margin-top: 5px; }
+        .footer { position: fixed; bottom: 0; width: 100%; display: flex; background: #111; }
+        .f-item { flex: 1; padding: 15px; text-align: center; font-size: 0.8rem; border-top: 1px solid #333; }
     </style>
 </head>
 <body>
-    <div class="top-bar">
-        <div class="logo">⚽ VATWHITE</div>
-        <div class="balance">TSH <span id="bal">0.00</span></div>
+    <div class="header">
+        <div class="logo-area">
+            <img src="1000002704.jpg" class="logo-img">
+            <span style="color:gold; font-weight:bold;">VATWHITE</span>
+        </div>
+        <div style="color:gold">TSH <span id="u_bal">0.00</span></div>
     </div>
 
-    <div id="game-canvas">
+    <div class="game-card">
         <div id="multiplier">1.00x</div>
-        <div id="gold-line"></div>
-        <div id="ball">⚽</div>
+        <div id="plane" style="position:absolute; bottom:20px; left:50%; font-size:40px;">✈️</div>
     </div>
 
-    <div class="bet-grid">
+    <div class="bet-area">
         <div class="bet-box">
-            <input type="number" id="a1" class="input-bet" value="500">
-            <button id="b1" class="btn-action btn-bet" onclick="handleBet(1)">Bet 1</button>
+            <input type="number" value="500" style="width:70%; text-align:center;">
+            <button class="btn-bet" onclick="alert('Bet 1 Imechukuliwa!')">BET 1</button>
         </div>
         <div class="bet-box">
-            <input type="number" id="a2" class="input-bet" value="500">
-            <button id="b2" class="btn-action btn-bet" onclick="handleBet(2)">Bet 2</button>
+            <input type="number" value="500" style="width:70%; text-align:center;">
+            <button class="btn-bet" onclick="alert('Bet 2 Imechukuliwa!')">BET 2</button>
         </div>
     </div>
 
-    <div class="nav-footer">
-        <div class="nav-item nav-active" onclick="alert('Lipa na M-PESA: 0702170114')">DEPOSIT</div>
-        <div class="nav-item" onclick="alert('Weka kiasi cha kutoa...')">WITHDRAW</div>
-        <div class="nav-item" onclick="location.reload()">LOGOUT</div>
+    <div class="footer">
+        <div class="f-item" onclick="alert('Lipa na M-PESA kwenda: 0702170114')">DEPOSIT</div>
+        <div class="f-item" onclick="alert('Weka kiasi...')">WITHDRAW</div>
     </div>
 
     <script>
         const socket = io();
-        let h = 20;
-        socket.on('tick', (m) => {
-            document.getElementById('multiplier').innerText = m + "x";
-            h += 1.5;
-            document.getElementById('ball').style.bottom = h + "px";
-            document.getElementById('gold-line').style.height = (h - 20) + "px";
-        });
-        socket.on('crash', (data) => {
-            document.getElementById('ball').innerText = "💥";
+        socket.on('tick', (m) => { document.getElementById('multiplier').innerText = m + "x"; });
+        socket.on('crash', (m) => { 
             document.getElementById('multiplier').style.color = "red";
+            document.getElementById('plane').innerText = "💥";
         });
         socket.on('new_game', () => {
-            h = 20;
-            document.getElementById('ball').innerText = "⚽";
             document.getElementById('multiplier').style.color = "gold";
+            document.getElementById('plane').innerText = "✈️";
         });
     </script>
 </body>
 </html>
-                
