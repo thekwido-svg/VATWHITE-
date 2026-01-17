@@ -1,38 +1,60 @@
 <!DOCTYPE html>
 <html>
-<body style="background:#000; color:white; font-family:sans-serif; padding:20px;">
-    <h2>VATWHITE ADMIN</h2>
-    <table border="1" style="width:100%; text-align:left;">
-        <thead>
-            <tr><th>Jina</th><th>Simu</th><th>Salio</th><th>Action</th></tr>
-        </thead>
-        <tbody id="list"></tbody>
-    </table>
+<head>
+    <title>VATWHITE Admin Control</title>
+    <style>
+        body { background: #050505; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        .panel { background: #111; border: 1px solid #ffd700; border-radius: 15px; padding: 25px; max-width: 800px; margin: auto; }
+        h1 { color: #ffd700; text-align: center; text-transform: uppercase; }
+        .user-card { background: #1a1a1a; padding: 15px; border-radius: 10px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #28a745; }
+        .btn { padding: 8px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-left: 5px; }
+        .btn-plus { background: #28a745; color: #fff; }
+        .btn-minus { background: #dc3545; color: #fff; }
+        .config-input { background: #000; border: 1px solid #333; color: gold; padding: 10px; border-radius: 5px; width: 100px; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <h1>Control Panel</h1>
+        <div style="text-align:center; margin-bottom:30px;">
+            <span>Max Odi: </span>
+            <input type="number" id="maxO" class="config-input" value="20.34">
+            <button class="btn btn-plus" onclick="alert('Limit Imewekwa!')">Set Limit</button>
+        </div>
 
-<script>
-    async function load() {
-        const res = await fetch('/admin/users');
-        const users = await res.json();
-        document.getElementById('list').innerHTML = users.map(u => `
-            <tr>
-                <td>${u.name}</td>
-                <td>${u.phone}</td>
-                <td style="color:yellow">${u.balance}</td>
-                <td>
-                    <button onclick="upd('${u.phone}','add')" style="background:green; color:white;">+ PESA</button>
-                    <button onclick="upd('${u.phone}','sub')" style="background:red; color:white;">- PESA</button>
-                </td>
-            </tr>
-        `).join('');
-    }
-    async function upd(phone, action) {
-        const amt = prompt("Kiasi:");
-        if(amt) {
-            await fetch('/admin/update-balance', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone, amount:amt, action}) });
-            load();
+        <h3>Active Users Management</h3>
+        <div id="user-list">
+            </div>
+    </div>
+
+    <script>
+        async function fetchUsers() {
+            const res = await fetch('/get-users');
+            const data = await res.json();
+            document.getElementById('user-list').innerHTML = data.map(u => `
+                <div class="user-card">
+                    <div>
+                        <strong style="color:gold">${u.firstname} ${u.lastname}</strong><br>
+                        <small>${u.phone}</small><br>
+                        <span>Salio: TSH ${u.balance.gold}</span>
+                    </div>
+                    <div>
+                        <button class="btn btn-plus" onclick="mod('${u.phone}', 500)">+ 500</button>
+                        <button class="btn btn-minus" onclick="mod('${u.phone}', -500)">- 500</button>
+                    </div>
+                </div>
+            `).join('');
         }
-    }
-    setInterval(load, 3000);
-</script>
+        async function mod(phone, amount) {
+            await fetch('/update-balance', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ phone, amount })
+            });
+            fetchUsers();
+        }
+        setInterval(fetchUsers, 4000);
+        fetchUsers();
+    </script>
 </body>
 </html>
