@@ -20,7 +20,7 @@ let currentMultiplier = 1.0;
 let crashPoint = 2.0; 
 let maxLimit = 20.34;
 
-// Injini ya Mchezo
+// Engine ya Mchezo
 setInterval(() => {
     if (gameStatus === "running") {
         currentMultiplier += 0.01; 
@@ -41,7 +41,7 @@ function resetGame() {
     setTimeout(() => { gameStatus = "running"; }, 3000);
 }
 
-// Admin API
+// Admin API: Ongeza/Punguza Salio
 app.post('/update-balance', async (req, res) => {
     const { phone, amount } = req.body;
     try {
