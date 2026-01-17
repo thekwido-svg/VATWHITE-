@@ -2,50 +2,50 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VATWHITE Official</title>
+    <title>VATWHITE</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; }
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #1a1a1a; border-bottom: 2px solid gold; }
-        .logo-area { display: flex; align-items: center; gap: 8px; }
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow-x: hidden; }
+        .header { display: flex; justify-content: space-between; padding: 12px; background: #111; border-bottom: 2px solid gold; align-items: center; }
+        .logo-box { display: flex; align-items: center; gap: 10px; }
         .logo-img { width: 35px; border-radius: 50%; border: 1px solid gold; }
-        .game-card { height: 280px; position: relative; background: radial-gradient(circle, #222, #000); overflow: hidden; margin: 5px; border-radius: 10px; }
-        #multiplier { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 3.5rem; font-weight: bold; color: gold; text-shadow: 0 0 15px gold; }
-        .bet-area { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
-        .bet-box { background: #151515; padding: 10px; border-radius: 10px; border: 1px solid #333; text-align: center; }
-        .btn-bet { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-weight: bold; margin-top: 5px; }
-        .footer { position: fixed; bottom: 0; width: 100%; display: flex; background: #111; }
-        .f-item { flex: 1; padding: 15px; text-align: center; font-size: 0.8rem; border-top: 1px solid #333; }
+        #canvas { height: 260px; position: relative; background: radial-gradient(circle, #222, #000); overflow: hidden; margin: 10px; border-radius: 15px; }
+        #multiplier { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 3.8rem; font-weight: bold; color: gold; text-shadow: 0 0 15px gold; }
+        .bet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
+        .bet-card { background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px solid #333; text-align: center; }
+        .btn-bet { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 8px; }
+        .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #111; border-top: 1px solid #333; }
+        .nav-btn { flex: 1; padding: 15px; text-align: center; color: gold; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="logo-area">
+        <div class="logo-box">
             <img src="1000002704.jpg" class="logo-img">
-            <span style="color:gold; font-weight:bold;">VATWHITE</span>
+            <span style="color:gold; font-weight:bold; font-size: 1.1rem;">VATWHITE</span>
         </div>
-        <div style="color:gold">TSH <span id="u_bal">0.00</span></div>
+        <div style="color:gold; font-weight:bold;">TSH <span id="balance">0.00</span></div>
     </div>
 
-    <div class="game-card">
+    <div id="canvas">
         <div id="multiplier">1.00x</div>
-        <div id="plane" style="position:absolute; bottom:20px; left:50%; font-size:40px;">✈️</div>
+        <div id="plane" style="position:absolute; bottom:20px; left:50%; font-size:45px;">✈️</div>
     </div>
 
-    <div class="bet-area">
-        <div class="bet-box">
-            <input type="number" value="500" style="width:70%; text-align:center;">
-            <button class="btn-bet" onclick="alert('Bet 1 Imechukuliwa!')">BET 1</button>
+    <div class="bet-grid">
+        <div class="bet-card">
+            <input type="number" value="500" style="width:80%; text-align:center; background:#000; color:gold; border:1px solid #444; padding:5px;">
+            <button class="btn-bet">BET 1</button>
         </div>
-        <div class="bet-box">
-            <input type="number" value="500" style="width:70%; text-align:center;">
-            <button class="btn-bet" onclick="alert('Bet 2 Imechukuliwa!')">BET 2</button>
+        <div class="bet-card">
+            <input type="number" value="500" style="width:80%; text-align:center; background:#000; color:gold; border:1px solid #444; padding:5px;">
+            <button class="btn-bet">BET 2</button>
         </div>
     </div>
 
-    <div class="footer">
-        <div class="f-item" onclick="alert('Lipa na M-PESA kwenda: 0702170114')">DEPOSIT</div>
-        <div class="f-item" onclick="alert('Weka kiasi...')">WITHDRAW</div>
+    <div class="nav">
+        <div class="nav-btn" onclick="alert('Lipa na M-PESA kwenda: 0702170114\nKisha subiri salio liongezwe na Admin.')">DEPOSIT</div>
+        <div class="nav-btn" onclick="alert('Weka kiasi unachotaka kutoa...')">WITHDRAW</div>
     </div>
 
     <script>
