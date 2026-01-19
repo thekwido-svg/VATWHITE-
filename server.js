@@ -7,88 +7,69 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: "*" } });
 
-// Database Connection (Ulinzi dhidi ya op_error)
+// Sanidi Database kwa usalama kuzuia 502 Bad Gateway
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
-    connectionTimeoutMillis: 10000
+    max: 20, // Idadi ya miunganisho ili isizidi uwezo
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
 });
+
+// Kamata makosa ya database bila kuzima server
+pool.on('error', (err) => { console.error('DATABASE ALERT:', err.message); });
 
 app.use(express.json());
 app.use(express.static(__dirname + '/'));
 
 let currentMultiplier = 1.0;
 let gameStatus = "running"; 
-let activeBets = []; // Hifadhi ya dau zote live
-let gameHistory = [];
+let gameHistory = ["1.04", "2.91", "2.56", "2.70", "1.02"]; // History
 
-// SMART ROCKET LOGIC: Polepole hadi 1.05x, kisha mbio
 function generateCrashPoint() {
-    let rand = Math.random() * 100;
-    // Ulinzi wa Faida: Kama dau zote kwa pamoja zimezidi 500, lipua mapema
-    let totalRisk = activeBets.reduce((sum, b) => sum + b.amt, 0);
-    if (totalRisk > 500 && Math.random() < 0.80) return (Math.random() * 0.05 + 1.00).toFixed(2);
-
-    if (rand < 40) return (Math.random() * 0.08 + 1.01).toFixed(2); // 1.02x nyingi
-    if (rand < 85) return (Math.random() * 2.5 + 1.1).toFixed(2);   
-    return (Math.random() * 15 + 5).toFixed(2); // Odi kubwa
+    let r = Math.random() * 100;
+    if (r < 35) return (Math.random() * 0.05 + 1.01).toFixed(2); // 1.02x
+    if (r < 90) return (Math.random() * 3 + 1.1).toFixed(2); 
+    return (Math.random() * 20 + 5).toFixed(2); // Odi kubwa
 }
-
 let crashPoint = generateCrashPoint();
 
+// Engine ya Rocket: Smooth and Steady
 setInterval(() => {
     if (gameStatus === "running") {
-        let increment = currentMultiplier < 1.05 ? 0.005 : (currentMultiplier < 2 ? 0.03 : 0.08);
-        currentMultiplier = (parseFloat(currentMultiplier) + increment).toFixed(2);
+        // Rocket inaanza polepole hadi 1.05 kisha inachanganya
+        let inc = currentMultiplier < 1.05 ? 0.005 : 0.04;
+        currentMultiplier = (parseFloat(currentMultiplier) + inc).toFixed(2);
         io.emit('tick', currentMultiplier);
 
         if (parseFloat(currentMultiplier) >= parseFloat(crashPoint)) {
             gameStatus = "crashed";
             io.emit('crash', currentMultiplier);
             gameHistory.unshift(currentMultiplier);
-            if (gameHistory.length > 8) gameHistory.pop();
+            if (gameHistory.length > 6) gameHistory.pop();
             io.emit('history', gameHistory);
-            activeBets = []; // Safisha dau baada ya crash
+            
             setTimeout(() => {
                 currentMultiplier = 1.0;
                 crashPoint = generateCrashPoint();
                 gameStatus = "running";
                 io.emit('new_game');
-            }, 4000);
+            }, 3500); // Muda wa kusubiri kabla ya kuanza upya
         }
     }
 }, 80);
 
-// HANDLING SOCKET EVENTS (Double Bet & Admin Panel Tracking)
 io.on('connection', (socket) => {
-    // Kurekodi dau kutoka kwa mtumiaji (Vitufe vyote viwili)
-    socket.on('place_bet', (data) => {
-        activeBets.push({ phone: data.phone, amt: data.amt, id: data.id });
-        console.log(`PANEL: Dau la KES ${data.amt} limewekwa na ${data.phone} (Panel ${data.id})`);
-    });
-
-    // Kurekodi Cashout (Manual na Auto)
-    socket.on('player_cashout', async (data) => {
-        console.log(`ADMIN: ${data.phone} ameshinda KES ${data.win} kwenye ${data.m}x`);
-        // Hapa unaweza kuongeza kodi ya ku-update salio kwenye Database moja kwa moja
-        try {
-            await pool.query("UPDATE users SET balance = jsonb_set(balance, '{gold}', (COALESCE(balance->>'gold', '0')::numeric + $1)::text::jsonb) WHERE phone = $2", [data.win, data.phone]);
-        } catch (err) { console.error("Database Update Error:", err); }
-    });
+    socket.emit('history', gameHistory); // Tuma history mara tu mtu anapoingia
+    
+    // Kupokea dau na Cashout
+    socket.on('place_bet', (data) => { console.log(`BET: Panel ${data.id} - KES ${data.amt}`); });
+    socket.on('player_cashout', (data) => { console.log(`WIN: ${data.win} KES kimechukuliwa`); });
+    
+    // Live Chat
+    socket.on('send_msg', (data) => { io.emit('new_msg', data); });
 });
 
-// ENDPOINTS ZA KAWAIDA
-app.post('/signup', async (req, res) => {
-    const { phone } = req.body;
-    // Mteja asipoteze akaunti akirudi
-    const result = await pool.query("INSERT INTO users (phone, balance) VALUES ($1, '{\"gold\": 0}') ON CONFLICT (phone) DO UPDATE SET phone = EXCLUDED.phone RETURNING *", [phone]);
-    res.json({ success: true, user: result.rows[0] });
-});
-
-app.get('/get-balance/:phone', async (req, res) => {
-    const result = await pool.query("SELECT balance->>'gold' as bal FROM users WHERE phone = $1", [req.params.phone]);
-    res.json({ balance: result.rows[0]?.bal || "0.00" });
-});
-
+// LAZIMA: Hii inazuia 502 Bad Gateway kwenye Render
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`SERVER BORA LIVE KWENYE PORT ${PORT}`));
+server.listen(PORT, () => { console.log(`VATWHITE SERVER IS STABLE ON PORT ${PORT}`); });
