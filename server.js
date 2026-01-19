@@ -15,14 +15,35 @@ const pool = new Pool({
 app.use(express.json());
 app.use(express.static(__dirname + '/'));
 
-let currentMultiplier = 1.0, gameStatus = "running", gameHistory = ["1.04", "2.91", "2.56", "2.70", "1.02"];
-let crashPoint = (Math.random() * 5 + 1.1).toFixed(2);
+let currentMultiplier = 1.0, gameStatus = "running", gameHistory = [];
 
-// Engine ya Rocket na Odis
+// ALGORITHM YA FAIDA
+function generateCrashPoint() {
+    let chance = Math.random() * 100;
+
+    if (chance < 35) { 
+        // 35% ya michezo inaanguka haraka sana (1.00x - 1.20x) ili kutoa faida kwa Admin
+        return (Math.random() * 0.2 + 1.00).toFixed(2);
+    } else if (chance < 85) {
+        // 50% ya michezo inaishia hapa (1.21x - 5.00x)
+        return (Math.random() * 3.8 + 1.21).toFixed(2);
+    } else if (chance < 99) {
+        // 14% ya michezo inaenda juu kidogo (5.01x - 15.00x)
+        return (Math.random() * 10 + 5.01).toFixed(2);
+    } else {
+        // 1% TU ndiyo inaweza kufika odis kubwa (200x) - Hii hutokea mara chache sana kwa wiki
+        console.log("!!! BIG WIN ALERT !!!");
+        return (Math.random() * 150 + 50.0).toFixed(2);
+    }
+}
+
+let crashPoint = generateCrashPoint();
+
+// Mchezo na Odis Live
 setInterval(() => {
     if (gameStatus === "running") {
-        let inc = currentMultiplier < 1.1 ? 0.01 : 0.05;
-        currentMultiplier = (parseFloat(currentMultiplier) + inc).toFixed(2);
+        let speed = currentMultiplier < 2 ? 0.01 : currentMultiplier < 10 ? 0.05 : 0.2;
+        currentMultiplier = (parseFloat(currentMultiplier) + speed).toFixed(2);
         io.emit('tick', currentMultiplier);
 
         if (parseFloat(currentMultiplier) >= parseFloat(crashPoint)) {
@@ -31,9 +52,10 @@ setInterval(() => {
             gameHistory.unshift(currentMultiplier);
             if (gameHistory.length > 6) gameHistory.pop();
             io.emit('history', gameHistory);
+            
             setTimeout(() => {
                 currentMultiplier = 1.0;
-                crashPoint = (Math.random() * 8 + 1.1).toFixed(2);
+                crashPoint = generateCrashPoint();
                 gameStatus = "running";
                 io.emit('new_game');
             }, 4000);
@@ -41,7 +63,7 @@ setInterval(() => {
     }
 }, 100);
 
-// Usajili na Salio (Account haipotei)
+// Sehemu ya Usajili, Chat na Account
 app.post('/register', async (req, res) => {
     const { phone, password } = req.body;
     try {
@@ -52,7 +74,7 @@ app.post('/register', async (req, res) => {
 
 io.on('connection', (socket) => {
     socket.emit('history', gameHistory);
-    socket.on('send_msg', (data) => io.emit('new_msg', data)); // Live Chat
+    socket.on('send_msg', (data) => io.emit('new_msg', data));
 });
 
 server.listen(process.env.PORT || 3000);
