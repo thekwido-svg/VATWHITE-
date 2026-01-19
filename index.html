@@ -5,33 +5,35 @@
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-        #stage { height: 180px; position: relative; overflow: hidden; background: #050505; }
-        #multiplier { position: absolute; top: 30%; width: 100%; text-align: center; font-size: 3.5rem; font-weight: 900; z-index: 2; }
-        #rocket-wrap { position: absolute; bottom: 10%; left: 5%; font-size: 40px; transition: transform 0.1s linear; }
-        .history-bar { display: flex; gap: 5px; padding: 8px; justify-content: center; background: #0a0a0a; overflow-x: auto; }
-        .hist-item { padding: 3px 10px; border-radius: 15px; font-size: 0.7rem; background: #1a1a1a; font-weight: bold; border: 1px solid #333; }
+        #stage { height: 200px; position: relative; overflow: hidden; background: #050505; }
+        #multiplier { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 3.8rem; font-weight: 900; z-index: 2; }
+        #rocket-wrap { position: absolute; bottom: 10%; left: 5%; font-size: 45px; transition: transform 0.1s linear; }
+        .history-bar { display: flex; gap: 8px; padding: 10px; justify-content: center; background: #0a0a0a; overflow-x: auto; border-bottom: 1px solid #222; }
+        .hist-item { padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; background: #1a1a1a; font-weight: bold; border: 1px solid #333; }
         .tab-bar { display: flex; background: #111; }
-        .tab { flex: 1; padding: 15px; text-align: center; font-size: 0.8rem; font-weight: bold; color: #777; }
-        .tab.active { color: gold; border-bottom: 2px solid gold; background: #181818; }
-        .content { flex: 1; display: none; padding: 12px; overflow-y: auto; }
+        .tab { flex: 1; padding: 18px; text-align: center; font-size: 0.8rem; font-weight: bold; color: #777; }
+        .tab.active { color: gold; border-bottom: 3px solid gold; background: #181818; }
+        .content { flex: 1; display: none; padding: 15px; overflow-y: auto; }
         .content.active { display: block; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; }
+        .btn { width: 100%; padding: 18px; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
         .btn-bet { background: #28a745; color: white; }
         .btn-out { background: #ffc107; color: black; display: none; }
+        .bet-box { background: #111; padding: 20px; border-radius: 15px; border: 1px solid #222; margin-bottom: 15px; }
+        input { width: 100%; padding: 15px; background: #000; color: gold; border: 1px solid #333; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
         #auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; }
     </style>
 </head>
 <body>
     <div id="auth-screen">
         <h2 style="color:gold;">VATWHITE REGISTER</h2>
-        <div style="width:85%; background:#111; padding:25px; border-radius:15px; border:1px solid #333;">
-            <input type="number" id="r-phone" placeholder="Namba ya Simu" style="width:100%; padding:15px; margin-bottom:12px; background:#000; color:gold; border:1px solid #444; border-radius:8px;">
-            <input type="password" id="r-pass" placeholder="Password" style="width:100%; padding:15px; margin-bottom:20px; background:#000; color:gold; border:1px solid #444; border-radius:8px;">
+        <div style="width:85%; background:#111; padding:30px; border-radius:20px; border:1px solid #333;">
+            <input type="number" id="r-phone" placeholder="Namba ya Simu" style="margin-bottom:15px;">
+            <input type="password" id="r-pass" placeholder="Password" style="margin-bottom:25px;">
             <button class="btn btn-bet" onclick="handleAuth()">JISAJILI / LOGIN</button>
         </div>
     </div>
 
-    <div style="display:flex; justify-content:space-between; padding:12px; font-weight:bold; border-bottom:1px solid #222;">
+    <div style="display:flex; justify-content:space-between; padding:15px; font-weight:bold;">
         <span style="color:gold;">VATWHITE</span>
         <span style="color:#28a745;"><span id="bal">0.00</span> KES</span>
     </div>
@@ -39,7 +41,7 @@
     <div id="stage">
         <div id="multiplier">1.00x</div>
         <div id="rocket-wrap">🚀</div>
-        <svg style="position:absolute; width:100%; height:100%;"><path id="gold-path" d="" fill="none" stroke="gold" stroke-width="3"/></svg>
+        <svg style="position:absolute; width:100%; height:100%;"><path id="gold-path" d="" fill="none" stroke="gold" stroke-width="4"/></svg>
     </div>
 
     <div class="history-bar" id="hist-list"></div>
@@ -51,38 +53,38 @@
     </div>
 
     <div id="bet" class="content active">
-        <div style="background:#111; padding:15px; border-radius:10px; border:1px solid #222; margin-bottom:12px;">
+        <div class="bet-box">
             <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <input type="number" id="a1" value="10" style="flex:1; padding:12px; background:#000; color:gold; border:1px solid #333;">
-                <input type="number" id="ac1" placeholder="Auto" style="flex:1; padding:12px; background:#000; color:gold; border:1px solid #333;">
+                <input type="number" id="a1" value="10">
+                <input type="number" id="ac1" placeholder="Auto">
             </div>
             <button id="b1" class="btn btn-bet" onclick="pBet(1)">BET</button>
             <button id="o1" class="btn btn-out" onclick="cOut(1)">CASH OUT</button>
-            <label style="font-size:0.8rem; margin-top:8px; display:block;"><input type="checkbox" id="ab1"> Auto Bet</label>
+            <label style="display:block; margin-top:10px;"><input type="checkbox" id="ab1"> Auto Bet</label>
         </div>
-        <div style="background:#111; padding:15px; border-radius:10px; border:1px solid #222;">
+        <div class="bet-box">
             <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <input type="number" id="a2" value="100" style="flex:1; padding:12px; background:#000; color:gold; border:1px solid #333;">
-                <input type="number" id="ac2" placeholder="Auto" style="flex:1; padding:12px; background:#000; color:gold; border:1px solid #333;">
+                <input type="number" id="a2" value="100">
+                <input type="number" id="ac2" placeholder="Auto">
             </div>
             <button id="b2" class="btn btn-bet" onclick="pBet(2)">BET</button>
             <button id="o2" class="btn btn-out" onclick="cOut(2)">CASH OUT</button>
-            <label style="font-size:0.8rem; margin-top:8px; display:block;"><input type="checkbox" id="ab2"> Auto Bet</label>
+            <label style="display:block; margin-top:10px;"><input type="checkbox" id="ab2"> Auto Bet</label>
         </div>
     </div>
 
     <div id="chat" class="content">
-        <div id="c-box" style="height:180px; overflow-y:auto; border-bottom:1px solid #222; margin-bottom:12px; font-size:0.9rem; padding:5px;"></div>
+        <div id="c-box" style="height:200px; overflow-y:auto; border:1px solid #222; padding:10px; margin-bottom:10px;"></div>
         <div style="display:flex; gap:8px;">
-            <input type="text" id="m-text" placeholder="Sema kitu..." style="flex:1; padding:12px; background:#000; border:1px solid #333; color:#fff;">
-            <button class="btn btn-bet" style="width:auto; padding:12px 20px;" onclick="sChat()">TUMA</button>
+            <input type="text" id="m-text" placeholder="Sema kitu...">
+            <button class="btn btn-bet" style="width:auto; padding:0 20px;" onclick="sChat()">TUMA</button>
         </div>
     </div>
 
     <div id="menu" class="content">
-        <button class="btn" style="background:gold; color:#000; margin-bottom:15px;" onclick="dep()">DEPOSIT</button>
-        <button class="btn" style="background:#222; margin-bottom:20px;" onclick="alert('Maombi yametumwa kwa Admin!')">WITHDRAW</button>
-        <p style="text-align:center; font-size:0.8rem; color:#666;">Report Issues: <b>lvayranny@gmail.com</b></p>
+        <button class="btn" style="background:gold; color:#000; margin-bottom:20px;" onclick="dep()">DEPOSIT PESA</button>
+        <button class="btn" style="background:#222;" onclick="alert('Maombi yametumwa!')">WITHDRAW</button>
+        <p style="text-align:center; font-size:0.8rem; margin-top:30px; color:#666;">Msaada: <b>lvayranny@gmail.com</b></p>
     </div>
 
     <script>
@@ -92,15 +94,16 @@
         socket.on('tick', (m) => {
             currentM = parseFloat(m);
             document.getElementById('multiplier').innerText = m + "x";
-            x += 1.8; y += 1.1;
+            x += 2.2; y += 1.4;
             document.getElementById('rocket-wrap').style.transform = `translate(${x}px, -${y}px)`;
-            document.getElementById('gold-path').setAttribute('d', `M 0 180 Q ${x/2} 180, ${x+20} ${180-y}`);
+            document.getElementById('gold-path').setAttribute('d', `M 0 200 Q ${x/2} 200, ${x+25} ${200-y}`);
 
             [1, 2].forEach(id => {
                 if(activeB[id]) {
                     let win = (document.getElementById('a' + id).value * currentM).toFixed(2);
                     document.getElementById('o' + id).innerText = "CASH OUT KES " + win;
-                    if(document.getElementById('ac'+id).value && currentM >= document.getElementById('ac'+id).value) cOut(id);
+                    let autoV = document.getElementById('ac'+id).value;
+                    if(autoV && currentM >= parseFloat(autoV)) cOut(id);
                 }
             });
         });
@@ -135,7 +138,7 @@
             if(res.ok) { localStorage.setItem('vP', phone); document.getElementById('auth-screen').style.display='none'; }
         }
         socket.on('history', (d) => { document.getElementById('hist-list').innerHTML = d.map(v => `<div class="hist-item" style="color:${v>=2?'#2ecc71':'#ff4d4d'}">${v}x</div>`).join(''); });
-        function sChat() { socket.emit('send_msg', { text: document.getElementById('m-text').value }); document.getElementById('m-text').value = ''; }
+        function sChat() { let t = document.getElementById('m-text').value; if(t) { socket.emit('send_msg', { text: t }); document.getElementById('m-text').value = ''; } }
         socket.on('new_msg', (d) => { document.getElementById('c-box').innerHTML += `<div><b>User:</b> ${d.text}</div>`; });
         window.onload = () => { if(localStorage.getItem('vP')) document.getElementById('auth-screen').style.display='none'; }
     </script>
