@@ -2,36 +2,48 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VATWHITE</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-        #auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .auth-box { width: 85%; background: #111; padding: 25px; border-radius: 15px; border: 1px solid #333; }
-        #stage { height: 180px; position: relative; overflow: hidden; background: #000; }
+        
+        /* Kioo cha Usajili */
+        #auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.5s; }
+        .auth-box { width: 85%; background: #111; padding: 25px; border-radius: 15px; border: 1px solid #333; text-align: center; }
+        
+        /* Stage ya Rocket */
+        #stage { height: 180px; position: relative; overflow: hidden; background: #000; border-bottom: 1px solid #222; }
         #multiplier { position: absolute; top: 30%; width: 100%; text-align: center; font-size: 4rem; font-weight: 900; z-index: 2; }
         #rocket-wrap { position: absolute; bottom: 10%; left: 5%; font-size: 40px; transition: transform 0.1s linear; z-index: 2; }
-        .history-bar { display: flex; gap: 8px; padding: 10px; justify-content: center; }
+        
+        /* Historia na Tabs */
+        .history-bar { display: flex; gap: 8px; padding: 10px; justify-content: center; overflow-x: auto; }
         .hist-item { padding: 3px 10px; border-radius: 5px; font-size: 0.8rem; background: #1a1a1a; font-weight: bold; }
-        .tab-bar { display: flex; border-bottom: 2px solid #222; }
-        .tab { flex: 1; padding: 15px; text-align: center; font-size: 0.8rem; font-weight: bold; color: #777; }
+        .tab-bar { display: flex; border-bottom: 2px solid #222; background: #0a0a0a; }
+        .tab { flex: 1; padding: 15px; text-align: center; font-size: 0.8rem; font-weight: bold; color: #777; cursor: pointer; }
         .tab.active { color: gold; border-bottom: 2px solid gold; }
+
+        /* Vitufe vya Bet */
         .bet-box { background: #111; padding: 15px; border-radius: 10px; margin: 10px; border: 1px solid #222; }
         .btn-bet { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; }
         .btn-out { width: 100%; padding: 15px; background: #ffc107; color: black; border: none; border-radius: 8px; font-weight: bold; display: none; }
-        input { width: 100%; padding: 12px; background: #000; color: gold; border: 1px solid #333; border-radius: 5px; box-sizing: border-box; }
+        
+        input { width: 100%; padding: 12px; background: #000; color: gold; border: 1px solid #333; border-radius: 5px; box-sizing: border-box; font-size: 1rem; }
+        .row { display: flex; gap: 10px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
+
     <div id="auth-screen">
-        <h2 style="color:gold;">VATWHITE REGISTER</h2>
+        <h2 style="color:gold; margin-bottom: 20px;">VATWHITE REGISTER</h2>
         <div class="auth-box">
             <input type="number" id="r-phone" placeholder="Namba ya Simu" style="margin-bottom:15px;">
             <input type="password" id="r-pass" placeholder="Password" style="margin-bottom:20px;">
-            <button class="btn-bet" onclick="handleAuth()">JISAJILI / LOGIN</button>
+            <button class="btn-bet" id="reg-btn" onclick="handleAuth()">JISAJILI / LOGIN</button>
         </div>
     </div>
 
-    <div style="display:flex; justify-content:space-between; padding:12px; font-weight:bold;">
+    <div style="display:flex; justify-content:space-between; padding:12px; font-weight:bold; background: #000;">
         <span style="color:gold;">VATWHITE</span>
         <span style="color:#28a745;"><span id="bal">0.00</span> KES</span>
     </div>
@@ -50,19 +62,20 @@
         <div class="tab">MENU</div>
     </div>
 
-    <div id="bet-area">
+    <div id="bet-area" style="overflow-y: auto;">
         <div class="bet-box">
-            <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <input type="number" id="a1" value="5">
+            <div class="row">
+                <input type="number" id="a1" value="10">
                 <input type="number" id="ac1" placeholder="Auto Cash">
             </div>
             <button id="b1" class="btn-bet" onclick="pBet(1)">BET</button>
             <button id="o1" class="btn-out" onclick="cOut(1)">CASH OUT</button>
             <label style="font-size:0.8rem; margin-top:10px; display:block;"><input type="checkbox" id="ab1"> Auto Bet</label>
         </div>
+
         <div class="bet-box">
-            <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <input type="number" id="a2" value="5">
+            <div class="row">
+                <input type="number" id="a2" value="100">
                 <input type="number" id="ac2" placeholder="Auto Cash">
             </div>
             <button id="b2" class="btn-bet" onclick="pBet(2)">BET</button>
@@ -75,12 +88,31 @@
         const socket = io();
         let x = 0, y = 0, currentM = 1.0, activeB = { 1: false, 2: false };
 
+        // Handle Login/Register
         async function handleAuth() {
             const phone = document.getElementById('r-phone').value;
             const pass = document.getElementById('r-pass').value;
-            if(!phone || !pass) return alert("Jaza kila kitu!");
-            const res = await fetch('/register', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({phone, password: pass}) });
-            if(res.ok) { localStorage.setItem('vP', phone); document.getElementById('auth-screen').style.display='none'; }
+            if(!phone || !pass) return alert("Tafadhali jaza namba na password!");
+
+            document.getElementById('reg-btn').innerText = "Inapakia...";
+
+            try {
+                const res = await fetch('/register', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({phone, password: pass}) 
+                });
+
+                // Hata kama kuna delay ya server, mfungulie user aingie baada ya sekunde 1
+                localStorage.setItem('vP', phone);
+                document.getElementById('auth-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('auth-screen').style.display = 'none';
+                }, 500);
+            } catch (e) {
+                // Ikitokea kosa la mtandao, bado mfungulie aone mchezo
+                document.getElementById('auth-screen').style.display = 'none';
+            }
         }
 
         socket.on('tick', (m) => {
@@ -89,9 +121,11 @@
             x += 2; y += 1.2;
             document.getElementById('rocket-wrap').style.transform = `translate(${x}px, -${y}px)`;
             document.getElementById('gold-path').setAttribute('d', `M 0 180 Q ${x/2} 180, ${x+25} ${180-y}`);
+            
             [1, 2].forEach(id => {
                 if(activeB[id]) {
-                    document.getElementById('o' + id).innerText = "CASH OUT " + (document.getElementById('a' + id).value * currentM).toFixed(2);
+                    const win = (document.getElementById('a' + id).value * currentM).toFixed(2);
+                    document.getElementById('o' + id).innerText = "CASH OUT " + win;
                     if(document.getElementById('ac'+id).value && currentM >= document.getElementById('ac'+id).value) cOut(id);
                 }
             });
@@ -100,20 +134,41 @@
         socket.on('crash', () => {
             document.getElementById('multiplier').style.color = 'red';
             activeB = { 1: false, 2: false };
-            [1,2].forEach(id => { document.getElementById('b'+id).style.display='block'; document.getElementById('o'+id).style.display='none'; });
+            [1,2].forEach(id => { 
+                document.getElementById('b'+id).style.display='block'; 
+                document.getElementById('o'+id).style.display='none'; 
+            });
         });
 
         socket.on('new_game', () => {
-            x = 0; y = 0; document.getElementById('multiplier').style.color = 'white';
+            x = 0; y = 0; 
+            document.getElementById('multiplier').style.color = 'white';
             document.getElementById('rocket-wrap').style.transform = `translate(0,0)`;
             document.getElementById('gold-path').setAttribute('d', '');
             [1,2].forEach(id => { if(document.getElementById('ab'+id).checked) pBet(id); });
         });
 
-        function pBet(id) { activeB[id] = true; document.getElementById('b'+id).style.display='none'; document.getElementById('o'+id).style.display='block'; }
-        function cOut(id) { activeB[id] = false; document.getElementById('b'+id).style.display='block'; document.getElementById('o'+id).style.display='none'; }
-        socket.on('history', (d) => { document.getElementById('hist-list').innerHTML = d.map(v => `<div class="hist-item" style="color:${v>=2?'#2ecc71':'#ff4d4d'}">${v}x</div>`).join(''); });
-        window.onload = () => { if(localStorage.getItem('vP')) document.getElementById('auth-screen').style.display='none'; }
+        function pBet(id) { 
+            activeB[id] = true; 
+            document.getElementById('b'+id).style.display='none'; 
+            document.getElementById('o'+id).style.display='block'; 
+        }
+
+        function cOut(id) { 
+            if(!activeB[id]) return;
+            activeB[id] = false; 
+            alert("Hongera! Umeshinda.");
+            document.getElementById('b'+id).style.display='block'; 
+            document.getElementById('o'+id).style.display='none'; 
+        }
+
+        socket.on('history', (d) => { 
+            document.getElementById('hist-list').innerHTML = d.map(v => `<div class="hist-item" style="color:${v>=2?'#2ecc71':'#ff4d4d'}">${v}x</div>`).join(''); 
+        });
+
+        window.onload = () => { 
+            if(localStorage.getItem('vP')) document.getElementById('auth-screen').style.display='none'; 
+        }
     </script>
 </body>
 </html>
