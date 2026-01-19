@@ -15,51 +15,44 @@ const pool = new Pool({
 app.use(express.json());
 app.use(express.static(__dirname + '/'));
 
-let currentMultiplier = 1.0;
-let gameStatus = "running"; 
-let gameHistory = ["1.04", "2.91", "2.56", "2.70", "1.02"];
+let currentMultiplier = 1.0, gameStatus = "running", gameHistory = ["1.04", "2.91", "2.56", "2.70", "1.02"];
+let crashPoint = (Math.random() * 5 + 1.1).toFixed(2);
 
-// Mfumo wa Odis - Inatuma 'tick' kila sekunde 0.08 kuzuia kuganda
-function startGame() {
-    let crashPoint = (Math.random() < 0.3) ? (Math.random() * 0.05 + 1.01).toFixed(2) : (Math.random() * 10 + 1.1).toFixed(2);
-    let interval = setInterval(() => {
-        if (gameStatus === "running") {
-            let inc = currentMultiplier < 1.10 ? 0.01 : 0.05; 
-            currentMultiplier = (parseFloat(currentMultiplier) + inc).toFixed(2);
-            io.emit('tick', currentMultiplier); 
+// Engine ya Rocket na Odis
+setInterval(() => {
+    if (gameStatus === "running") {
+        let inc = currentMultiplier < 1.1 ? 0.01 : 0.05;
+        currentMultiplier = (parseFloat(currentMultiplier) + inc).toFixed(2);
+        io.emit('tick', currentMultiplier);
 
-            if (parseFloat(currentMultiplier) >= parseFloat(crashPoint)) {
-                clearInterval(interval);
-                gameStatus = "crashed";
-                io.emit('crash', currentMultiplier);
-                gameHistory.unshift(currentMultiplier);
-                if (gameHistory.length > 5) gameHistory.pop();
-                io.emit('history', gameHistory);
-                setTimeout(() => {
-                    currentMultiplier = 1.0;
-                    gameStatus = "running";
-                    io.emit('new_game');
-                    startGame();
-                }, 4000);
-            }
+        if (parseFloat(currentMultiplier) >= parseFloat(crashPoint)) {
+            gameStatus = "crashed";
+            io.emit('crash', currentMultiplier);
+            gameHistory.unshift(currentMultiplier);
+            if (gameHistory.length > 6) gameHistory.pop();
+            io.emit('history', gameHistory);
+            setTimeout(() => {
+                currentMultiplier = 1.0;
+                crashPoint = (Math.random() * 8 + 1.1).toFixed(2);
+                gameStatus = "running";
+                io.emit('new_game');
+            }, 4000);
         }
-    }, 80);
-}
+    }
+}, 100);
 
-// API ya Kujisajili
+// Usajili na Salio (Account haipotei)
 app.post('/register', async (req, res) => {
     const { phone, password } = req.body;
     try {
-        await pool.query("INSERT INTO users (phone, password, balance) VALUES ($1, $2, $3) ON CONFLICT (phone) DO NOTHING", [phone, password, JSON.stringify({ gold: 0 })]);
+        await pool.query("INSERT INTO users (phone, password, balance) VALUES ($1, $2, '{\"gold\": 0}') ON CONFLICT (phone) DO NOTHING", [phone, password]);
         res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: "Error" }); }
+    } catch (err) { res.status(500).send(err); }
 });
 
 io.on('connection', (socket) => {
     socket.emit('history', gameHistory);
-    socket.on('place_bet', (data) => { /* Logic ya bet */ });
-    socket.on('send_msg', (data) => { io.emit('new_msg', data); });
+    socket.on('send_msg', (data) => io.emit('new_msg', data)); // Live Chat
 });
 
-startGame();
 server.listen(process.env.PORT || 3000);
