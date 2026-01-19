@@ -86,20 +86,21 @@
 
     <div id="menu" class="content" style="padding:20px;">
         <button class="btn-bet" style="background:gold; color:#000; margin-bottom:20px;" onclick="dep()">DEPOSIT PESA</button>
-        <button class="btn-bet" style="background:#222;" onclick="alert('Maombi ya kutoa pesa yamepokelewa!')">WITHDRAW</button>
-        <p style="text-align:center; color:#555; margin-top:20px;">Support: lvayranny@gmail.com</p>
+        <button class="btn-bet" style="background:#222;" onclick="alert('Maombi yako yamepokelewa!')">WITHDRAW</button>
     </div>
 
     <script>
         const socket = io();
         let x = 0, y = 0, currentM = 1.0, activeB = { 1: false, 2: false }, myPhone = localStorage.getItem('vP');
 
-        // FUNGUA APP NA SOMA SALIO
+        // SOMA DATA KUTOKA ADMIN
         async function loadUser() {
             if(!myPhone) return;
-            const r = await fetch('/admin/user-details/' + myPhone);
-            const d = await r.json();
-            if(d.success) document.getElementById('bal').innerText = d.data.bal;
+            try {
+                const r = await fetch('/admin/user-details/' + myPhone);
+                const d = await r.json();
+                if(d.success) document.getElementById('bal').innerText = d.data.bal;
+            } catch(e) {}
         }
 
         async function handleAuth() {
@@ -125,13 +126,13 @@
             });
         });
 
-        // BETTING LOGIC NA KUKATA PESA
+        // BETTING NA UPDATE DATABASE
         async function pBet(id) {
             const amt = parseFloat(document.getElementById('a' + id).value);
             const bal = parseFloat(document.getElementById('bal').innerText);
-            if(amt > bal) return alert("Huna pesa za kutosha! Deposit kwanza.");
+            if(amt > bal) return alert("Huna pesa za kutosha!");
             
-            // Kata pesa kwenye database
+            // Kata pesa kwa database kwanza
             await fetch('/admin/update-balance', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({phone: myPhone, amount: -amt}) });
             activeB[id] = true; loadUser();
             document.getElementById('b'+id).style.display='none'; document.getElementById('o'+id).style.display='block';
@@ -141,10 +142,9 @@
             if(!activeB[id]) return;
             activeB[id] = false;
             const win = parseFloat(document.getElementById('a' + id).value * currentM);
-            
-            // Ongeza ushindi kwenye database
+            // Ongeza ushindi kwa database
             await fetch('/admin/update-balance', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({phone: myPhone, amount: win}) });
-            alert("Hongera! Umeshinda KES " + win.toFixed(2));
+            alert("Umeshinda KES " + win.toFixed(2));
             loadUser();
             document.getElementById('b'+id).style.display='block'; document.getElementById('o'+id).style.display='none';
         }
@@ -153,6 +153,7 @@
             document.getElementById('multiplier').style.color = 'red';
             activeB = { 1: false, 2: false };
             [1,2].forEach(id => { document.getElementById('b'+id).style.display='block'; document.getElementById('o'+id).style.display='none'; });
+            loadUser(); // Refresh salio baada ya crash
         });
 
         socket.on('new_game', () => {
@@ -162,23 +163,23 @@
             [1,2].forEach(id => { if(document.getElementById('ab'+id).checked) pBet(id); });
         });
 
-        // CHAT NA TABS
         function sh(i, e) {
             document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById(i).classList.add('active'); e.classList.add('active');
         }
+
         function sChat() { 
             let t = document.getElementById('m-text').value; 
-            if(t) { socket.emit('send_msg', { p: myPhone.substring(7), t: t }); document.getElementById('m-text').value = ''; } 
+            if(t) { socket.emit('send_msg', { p: myPhone.substring(myPhone.length - 4), t: t }); document.getElementById('m-text').value = ''; } 
         }
         socket.on('new_msg', (d) => { document.getElementById('c-box').innerHTML += `<div class="chat-msg"><b>User...${d.p}:</b> ${d.t}</div>`; });
         socket.on('history', (d) => { document.getElementById('hist-list').innerHTML = d.map(v => `<div class="hist-item" style="color:${v>=2?'#2ecc71':'#ff4d4d'}">${v}x</div>`).join(''); });
 
         async function dep() {
             const res = await fetch('/payment-info');
-            const data = await res.json();
-            alert(`LIPA HAPA:\nMethod: ${data.method}\nNamba: ${data.number}\nJina: ${data.name}`);
+            const d = await res.json();
+            alert(`LIPA:\nMethod: ${d.method}\nNamba: ${d.number}\nJina: ${d.name}`);
         }
 
         window.onload = () => { if(myPhone) { document.getElementById('auth-screen').style.display='none'; loadUser(); } }
