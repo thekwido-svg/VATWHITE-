@@ -1,73 +1,25 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body { background: #000; color: #fff; font-family: sans-serif; padding: 15px; }
-        .card { background: #111; padding: 25px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
-        input { width: 100%; padding: 20px; margin: 10px 0; background: #000; color: gold; border: 1px solid #444; font-size: 1.2rem; box-sizing: border-box; }
-        button { width: 100%; padding: 25px; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 10px; }
-        .btn-green { background: #28a745; color: white; }
-        .btn-yellow { background: gold; color: black; }
-        .btn-red { background: #dc3545; color: white; }
-    </style>
-</head>
-<body>
-    <h1 style="color:gold; text-align:center;">VATWHITE CONTROL</h1>
+// Function ya kutafuta mchezaji
+async function getU() {
+    const phoneInput = document.getElementById('sph').value;
+    const infoDiv = document.getElementById('ud'); // Sehemu inayofichuka
+    
+    if(!phoneInput) return alert("Weka namba ya mchezaji kwanza!");
 
-    <div class="card">
-        <h3>Dhibiti Rocket (1.00x)</h3>
-        <input type="number" id="crash-p" value="1.00" step="0.01">
-        <button class="btn-yellow" onclick="setCr()">SET NEXT CRASH</button>
-    </div>
+    try {
+        const response = await fetch('/admin/user-details/' + phoneInput);
+        const result = await response.json();
 
-    <div class="card">
-        <h3>Tafuta & Ongeza Pesa</h3>
-        <input type="number" id="sph" placeholder="Namba ya Mchezaji">
-        <button style="background:#444; color:white;" onclick="getU()">TAFUTA DATA</button>
-        <div id="ud" style="display:none; margin-top:20px;">
-            <p>Salio la Sasa: <span id="ubal" style="color:lime; font-weight:bold;">0.00</span> KES</p>
-            <input type="number" id="mamt" placeholder="Kiasi (Mfano 500 au -500)">
-            <button class="btn-green" onclick="upd(1)">ONGEZA PESA</button>
-            <button class="btn-red" onclick="upd(-1)">PUNGUZA PESA</button>
-        </div>
-    </div>
-
-    <div class="card">
-        <h3>Namba za Malipo (Deposit)</h3>
-        <input type="text" id="pm" placeholder="Method (TILL/PAYBILL)">
-        <input type="text" id="pn" placeholder="Namba ya Malipo">
-        <input type="text" id="pnm" placeholder="Jina la Account">
-        <button class="btn-green" onclick="updP()">BADILISHA MALIPO</button>
-    </div>
-
-    <script>
-        async function setCr() {
-            await fetch('/admin/set-crash', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({point: document.getElementById('crash-p').value})});
-            alert("Imewekwa!");
+        if (response.ok && result.success) {
+            // KAMA IPO: Onyesha data na fungua box la pesa
+            infoDiv.style.display = 'block';
+            document.getElementById('ubal').innerText = result.data.bal;
+            alert("Mchezaji amepatikana!");
+        } else {
+            // KAMA HAIPO: Ficha box na toa onyo
+            infoDiv.style.display = 'none';
+            alert("Namba hiyo HAIJAJISAJILI kwenye mfumo.");
         }
-        async function getU() {
-            const r = await fetch('/admin/user-details/'+document.getElementById('sph').value);
-            const res = await r.json();
-            if(r.ok && res.success) {
-                document.getElementById('ud').style.display='block';
-                document.getElementById('ubal').innerText=res.data.bal;
-            } else {
-                document.getElementById('ud').style.display='none';
-                alert("Mchezaji huyu hajajisajili!");
-            }
-        }
-        async function upd(t) {
-            let a = parseFloat(document.getElementById('mamt').value);
-            if(t===-1) a = -Math.abs(a);
-            await fetch('/admin/update-balance', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone:document.getElementById('sph').value, amount:a})});
-            alert("Imekamilika!"); getU();
-        }
-        async function updP() {
-            const b = {method:document.getElementById('pm').value, number:document.getElementById('pn').value, name:document.getElementById('pnm').value};
-            await fetch('/admin/update-payment', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(b)});
-            alert("Namba zimebadilishwa!");
-        }
-    </script>
-</body>
-</html>
+    } catch (error) {
+        alert("Server imekataa kuleta data. Hakikisha umei-deploy vizuri Render!");
+    }
+}
