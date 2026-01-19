@@ -5,128 +5,177 @@
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; }
-        .header { display: flex; justify-content: space-between; padding: 12px; border-bottom: 2px solid gold; }
-        #stage { height: 320px; position: relative; background: #000; overflow: hidden; }
-        #multiplier { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 4.5rem; font-weight: 900; z-index: 10; }
-        #rocket-wrap { position: absolute; bottom: 20px; left: 10%; z-index: 5; font-size: 60px; will-change: transform; }
-        .history-container { display: flex; gap: 5px; padding: 10px; justify-content: center; background: #111; }
-        .hist-item { padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; border: 1px solid #444; }
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
-        .btn { padding: 18px; border: none; border-radius: 8px; font-weight: bold; color: white; cursor: pointer; }
-        .btn-bet { background: #28a745; }
-        .btn-withdraw { background: #d91d1d; }
-        .btn-deposit { background: gold; color: black; }
-        input { width: 90%; padding: 15px; margin: 10px; background: #111; color: #fff; border: 1px solid gold; }
+        .header { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid gold; }
+        #stage { height: 280px; position: relative; background: #000; overflow: hidden; }
+        #multiplier { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 4rem; font-weight: 900; z-index: 10; }
+        #rocket-wrap { position: absolute; bottom: 20px; left: 10%; z-index: 5; font-size: 50px; }
+        
+        /* Double Bet Layout */
+        .bet-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; background: #111; }
+        .bet-card { background: #1a1a1a; padding: 10px; border-radius: 8px; border: 1px solid #333; }
+        
+        .input-row { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+        input { padding: 10px; background: #000; color: gold; border: 1px solid #444; border-radius: 4px; font-size: 0.9rem; }
+        
+        .btn { width: 100%; padding: 12px 0; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-bottom: 5px; }
+        .btn-bet { background: #28a745; color: white; }
+        .btn-cashout { background: #ffcc00; color: #000; display: none; }
+        
+        .auto-controls { display: flex; justify-content: space-between; font-size: 0.7rem; color: #aaa; margin-top: 5px; }
+        
+        /* Chat & History */
+        .history-bar { display: flex; gap: 5px; padding: 8px; overflow-x: auto; background: #000; }
+        .hist-item { padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; background: #222; }
+        #chat-area { height: 100px; overflow-y: auto; padding: 10px; font-size: 0.8rem; background: #080808; border-top: 1px solid #222; }
     </style>
 </head>
 <body onload="checkUser()">
 
-    <div id="auth" style="padding:40px; text-align:center;">
-        <img src="1000002704.jpg" width="100" style="border-radius:50%;">
-        <h2>VATWHITE JOIN</h2>
-        <input type="text" id="phone" placeholder="Phone Number">
-        <button class="btn btn-bet" style="width:100%" onclick="login()">PLAY NOW</button>
-    </div>
-
-    <div id="game" style="display:none;">
+    <div id="game">
         <div class="header">
-            <div style="color:gold; font-weight:bold;">VATWHITE</div>
-            <div style="color:#28a745; font-weight:bold;"><span id="bal_val">0.00</span> KES</div>
+            <div style="color:gold;">VATWHITE</div>
+            <div style="color:#28a745;"><span id="bal_val">0.00</span> KES</div>
         </div>
 
         <div id="stage">
             <div id="multiplier">1.00x</div>
             <div id="rocket-wrap">🚀</div>
-            <svg style="position:absolute; width:100%; height:100%;"><path id="gold-path" d="" fill="none" stroke="gold" stroke-width="4"/></svg>
+            <svg style="position:absolute; width:100%; height:100%;"><path id="gold-path" d="" fill="none" stroke="gold" stroke-width="3"/></svg>
         </div>
 
-        <div class="history-container" id="history-list"></div>
+        <div class="history-bar" id="history-list"></div>
 
-        <div class="controls">
-            <button class="btn btn-bet" onclick="placeBet(20)">BET KES 20</button>
-            <button class="btn btn-withdraw" onclick="withdraw()">WITHDRAW</button>
-            <button class="btn btn-bet" onclick="placeBet(50)">BET KES 50</button>
-            <div style="border:1px solid gold; padding:5px; font-size:0.7rem; color:gold; text-align:center;">Lipa M-PESA:<br>0702170114</div>
-            <button class="btn btn-deposit" onclick="alert('Tuma 0702170114')">DEPOSIT</button>
-            <button class="btn" style="background:#333" onclick="logout()">LOGOUT</button>
+        <div class="bet-sections">
+            <div class="bet-card">
+                <div class="input-row">
+                    <input type="number" id="amt1" value="5" min="5" placeholder="Amount">
+                    <input type="number" id="auto1" step="0.1" placeholder="Auto Cash">
+                </div>
+                <button id="btn1" class="btn btn-bet" onclick="placeBetAction(1)">BET</button>
+                <button id="out1" class="btn btn-cashout" onclick="manualCashout(1)">CASH OUT</button>
+                <div class="auto-controls">
+                    <label><input type="checkbox" id="abt1"> Auto Bet</label>
+                </div>
+            </div>
+
+            <div class="bet-card">
+                <div class="input-row">
+                    <input type="number" id="amt2" value="5" min="5" placeholder="Amount">
+                    <input type="number" id="auto2" step="0.1" placeholder="Auto Cash">
+                </div>
+                <button id="btn2" class="btn btn-bet" onclick="placeBetAction(2)">BET</button>
+                <button id="out2" class="btn btn-cashout" onclick="manualCashout(2)">CASH OUT</button>
+                <div class="auto-controls">
+                    <label><input type="checkbox" id="abt2"> Auto Bet</label>
+                </div>
+            </div>
+        </div>
+
+        <div id="chat-area"></div>
+        <div class="header" style="border:none; padding:5px;">
+            <button class="btn" style="background:gold; color:black; width:48%;" onclick="alert('Lipa 0702170114')">DEPOSIT</button>
+            <button class="btn" style="background:red; color:white; width:48%;" onclick="logout()">LOGOUT</button>
         </div>
     </div>
 
-    <audio id="sound" loop><source src="https://www.soundjay.com/transportation/sounds/jet-engine-takeoff-01.mp3"></audio>
-
     <script>
         const socket = io();
-        let x = 0, y = 0;
-        const sound = document.getElementById('sound');
+        let x = 0, y = 0, targetM = 1.0, currentM = 1.0;
+        let bets = { 1: { active: false, amt: 0 }, 2: { active: false, amt: 0 } };
 
         function checkUser() {
-            if(localStorage.getItem('vatPhone')) {
-                document.getElementById('auth').style.display = 'none';
-                document.getElementById('game').style.display = 'block';
-                fetchBalance(localStorage.getItem('vatPhone'));
+            if(!localStorage.getItem('vatPhone')) location.reload();
+            fetchBalance(localStorage.getItem('vatPhone'));
+        }
+
+        // Kazi ya Bet
+        function placeBetAction(id) {
+            const amt = parseFloat(document.getElementById('amt' + id).value);
+            if(amt < 5) return alert("Kiwango cha chini ni Ksh 5");
+            
+            bets[id].active = true;
+            bets[id].amt = amt;
+            document.getElementById('btn' + id).style.display = 'none';
+            document.getElementById('out' + id).style.display = 'block';
+            
+            socket.emit('place_bet', { id, amt, phone: localStorage.getItem('vatPhone') });
+        }
+
+        // Manual Cashout
+        function manualCashout(id) {
+            if(!bets[id].active) return;
+            const win = (bets[id].amt * currentM).toFixed(2);
+            socket.emit('player_cashout', { id, win, m: currentM, phone: localStorage.getItem('vatPhone') });
+            resetBetUI(id);
+            alert("Umeshinda KES " + win);
+            fetchBalance(localStorage.getItem('vatPhone'));
+        }
+
+        function resetBetUI(id) {
+            bets[id].active = false;
+            document.getElementById('btn' + id).style.display = 'block';
+            document.getElementById('out' + id).style.display = 'none';
+        }
+
+        // --- ULTRA SMOOTH ENGINE ---
+        socket.on('tick', (m) => {
+            targetM = parseFloat(m);
+            renderFrame();
+        });
+
+        function renderFrame() {
+            if(currentM < targetM) {
+                currentM += 0.01; // Ongezeko dogo sana kwa ulaini
+                document.getElementById('multiplier').innerText = currentM.toFixed(2) + "x";
+                
+                // Mwendo wa Rocket
+                x += 1.8; y += 1.2;
+                const r = document.getElementById('rocket-wrap');
+                r.style.transform = `translate(${x}px, -${y}px)`;
+                document.getElementById('gold-path').setAttribute('d', `M 0 280 Q ${x/2} 280, ${x+30} ${280-y}`);
+
+                // Auto Cashout Check
+                [1, 2].forEach(id => {
+                    const autoVal = parseFloat(document.getElementById('auto' + id).value);
+                    if(bets[id].active && autoVal > 0 && currentM >= autoVal) manualCashout(id);
+                });
+                
+                requestAnimationFrame(renderFrame);
             }
         }
 
-        async function login() {
-            const phone = document.getElementById('phone').value;
-            await fetch('/signup', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ phone }) });
-            localStorage.setItem('vatPhone', phone);
-            checkUser();
-        }
+        socket.on('crash', (m) => {
+            currentM = targetM;
+            document.getElementById('multiplier').style.color = 'red';
+            document.getElementById('rocket-wrap').innerHTML = '💥';
+            [1, 2].forEach(id => resetBetUI(id));
+        });
 
-        function logout() { localStorage.removeItem('vatPhone'); location.reload(); }
+        socket.on('new_game', () => {
+            x = 0; y = 0; currentM = 1.0; targetM = 1.0;
+            document.getElementById('multiplier').innerText = "1.00x";
+            document.getElementById('multiplier').style.color = 'white';
+            document.getElementById('rocket-wrap').innerHTML = '🚀';
+            document.getElementById('rocket-wrap').style.transform = `translate(0,0)`;
+            document.getElementById('gold-path').setAttribute('d', '');
+            
+            // Auto Bet Trigger
+            [1, 2].forEach(id => {
+                if(document.getElementById('abt' + id).checked) placeBetAction(id);
+            });
+        });
 
+        // History na Chat
+        socket.on('history', (data) => {
+            const h = document.getElementById('history-list');
+            h.innerHTML = data.map(v => `<div class="hist-item" style="color:${v>=2?'#2ecc71':'#ff4d4d'}">${v}x</div>`).join('');
+        });
+        
         async function fetchBalance(p) {
             const res = await fetch('/get-balance/' + p);
             const d = await res.json();
             document.getElementById('bal_val').innerText = d.balance;
         }
-
-        async function placeBet(amt) {
-            await fetch('/place-bet', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ phone: localStorage.getItem('vatPhone'), amount: amt }) });
-            alert("Bet Set!");
-        }
-
-        async function withdraw() {
-            let a = prompt("Amount:");
-            if(a) { await fetch('/withdraw', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ phone: localStorage.getItem('vatPhone'), amount: a }) }); alert("Sent!"); }
-        }
-
-        socket.on('tick', (m) => {
-            document.getElementById('multiplier').innerText = m + "x";
-            sound.play();
-            x += 2.2; y += 1.6;
-            const r = document.getElementById('rocket-wrap');
-            r.style.transform = `translate(${x}px, -${y}px)`;
-            document.getElementById('gold-path').setAttribute('d', `M 0 320 Q ${x/2} 320, ${x+40} ${320-y}`);
-        });
-
-        socket.on('crash', () => {
-            sound.pause(); sound.currentTime = 0;
-            document.getElementById('multiplier').style.color = 'red';
-            document.getElementById('rocket-wrap').innerHTML = '💥';
-        });
-
-        socket.on('new_game', () => {
-            x = 0; y = 0;
-            document.getElementById('multiplier').style.color = 'white';
-            document.getElementById('rocket-wrap').innerHTML = '🚀';
-            document.getElementById('rocket-wrap').style.transform = `translate(0,0)`;
-            document.getElementById('gold-path').setAttribute('d', '');
-            fetchBalance(localStorage.getItem('vatPhone'));
-        });
-
-        socket.on('history', (data) => {
-            const l = document.getElementById('history-list');
-            l.innerHTML = '';
-            data.forEach(v => {
-                const i = document.createElement('div');
-                i.className = 'hist-item';
-                i.style.color = v >= 2 ? '#2ecc71' : '#ff4d4d';
-                i.innerText = v + 'x';
-                l.appendChild(i);
-            });
-        });
     </script>
 </body>
 </html>
