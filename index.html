@@ -5,46 +5,38 @@
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-        .header { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #333; font-weight: bold; font-size: 0.9rem; }
-        #stage { height: 180px; position: relative; background: #000; overflow: hidden; }
+        #stage { height: 160px; position: relative; border-bottom: 1px solid #222; }
         #multiplier { position: absolute; top: 25%; width: 100%; text-align: center; font-size: 3.5rem; font-weight: 900; }
-        #rocket-wrap { position: absolute; bottom: 15%; left: 10%; font-size: 40px; }
-        
-        .history-bar { display: flex; gap: 5px; padding: 5px; justify-content: center; background: #080808; }
-        .hist-item { padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; background: #1a1a1a; border: 1px solid #333; font-weight: bold; }
-
-        .tab-bar { display: flex; background: #111; border-top: 1px solid #222; }
-        .tab { flex: 1; padding: 12px; text-align: center; font-size: 0.8rem; font-weight: bold; color: #666; cursor: pointer; }
-        .tab.active { color: gold; border-bottom: 2px solid gold; background: #1a1a1a; }
-
+        .tab-bar { display: flex; background: #111; }
+        .tab { flex: 1; padding: 12px; text-align: center; font-size: 0.8rem; font-weight: bold; }
+        .tab.active { color: gold; border-bottom: 2px solid gold; }
         .content { flex: 1; display: none; padding: 10px; overflow-y: auto; }
         .content.active { display: block; }
-
-        /* Bet Panels */
-        .bet-card { background: #121212; padding: 12px; border-radius: 8px; border: 1px solid #222; margin-bottom: 10px; }
-        .row { display: flex; gap: 5px; margin-bottom: 5px; }
-        input { flex: 1; padding: 10px; background: #000; color: gold; border: 1px solid #333; border-radius: 5px; font-weight: bold; }
-        
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 5px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 5px; font-weight: bold; }
         .btn-bet { background: #28a745; color: white; }
         .btn-out { background: #ffc107; color: black; display: none; }
-        
-        #chat-list { height: 130px; overflow-y: auto; font-size: 0.8rem; border-bottom: 1px solid #222; margin-bottom: 10px; }
+        #auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; }
     </style>
 </head>
 <body>
-    <div class="header">
+    <div id="auth-screen">
+        <h2 style="color:gold;">VATWHITE REGISTER</h2>
+        <div style="width:80%; background:#111; padding:20px; border-radius:10px;">
+            <input type="number" id="reg-phone" placeholder="Namba ya Simu" style="width:100%; margin-bottom:10px; padding:10px;">
+            <input type="password" id="reg-pass" placeholder="Password" style="width:100%; margin-bottom:10px; padding:10px;">
+            <button class="btn btn-bet" onclick="handleRegister()">JISAJILI</button>
+        </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; padding:10px;">
         <span style="color:gold;">VATWHITE</span>
         <span style="color:#28a745;"><span id="bal">0.00</span> KES</span>
     </div>
 
     <div id="stage">
         <div id="multiplier">1.00x</div>
-        <div id="rocket-wrap">🚀</div>
-        <svg style="position:absolute; width:100%; height:100%;"><path id="gold-path" d="" fill="none" stroke="gold" stroke-width="3"/></svg>
+        <div id="rocket-wrap" style="position:absolute; bottom:10%; left:5%; font-size:40px;">🚀</div>
     </div>
-
-    <div class="history-bar" id="history-list"></div>
 
     <div class="tab-bar">
         <div class="tab active" onclick="show('bet', this)">BETTING</div>
@@ -53,44 +45,57 @@
     </div>
 
     <div id="bet" class="content active">
-        <div class="bet-card">
-            <div class="row">
-                <input type="number" id="amt1" value="5" min="5">
-                <input type="number" id="auto1" placeholder="Auto Cash">
-            </div>
+        <div style="background:#121212; padding:10px; border-radius:8px; margin-bottom:10px;">
+            <input type="number" id="amt1" value="5" style="width:45%; padding:10px;"> 
+            <input type="number" id="auto1" placeholder="Auto" style="width:45%; padding:10px;">
             <button id="btn1" class="btn btn-bet" onclick="placeBet(1)">BET</button>
-            <button id="out1" class="btn btn-out" onclick="cashout(1)">CASH OUT</button>
-            <div style="font-size: 0.7rem; margin-top:5px;"><input type="checkbox" id="abt1"> Auto Bet</div>
+            <button id="out1" class="btn btn-out" onclick="cash(1)">CASH OUT KES 0.00</button>
+            <label><input type="checkbox" id="abt1"> Auto Bet</label>
         </div>
-        <div class="bet-card">
-            <div class="row">
-                <input type="number" id="amt2" value="5" min="5">
-                <input type="number" id="auto2" placeholder="Auto Cash">
-            </div>
+        <div style="background:#121212; padding:10px; border-radius:8px;">
+            <input type="number" id="amt2" value="10" style="width:45%; padding:10px;"> 
+            <input type="number" id="auto2" placeholder="Auto" style="width:45%; padding:10px;">
             <button id="btn2" class="btn btn-bet" onclick="placeBet(2)">BET</button>
-            <button id="out2" class="btn btn-out" onclick="cashout(2)">CASH OUT</button>
-            <div style="font-size: 0.7rem; margin-top:5px;"><input type="checkbox" id="abt2"> Auto Bet</div>
+            <button id="out2" class="btn btn-out" onclick="cash(2)">CASH OUT KES 0.00</button>
+            <label><input type="checkbox" id="abt2"> Auto Bet</label>
         </div>
     </div>
 
-    <div id="chat" class="content">
-        <div id="chat-list"></div>
-        <div class="row">
-            <input type="text" id="msg" placeholder="Andika hapa...">
-            <button class="btn btn-bet" style="width: auto;" onclick="send()">TUMA</button>
-        </div>
-    </div>
-
+    <div id="chat" class="content">... Live Chat Iko Hapa ...</div>
     <div id="menu" class="content">
-        <button class="btn" style="background:#ffc107; margin-bottom:10px;" onclick="alert('Lipa 0702170114 kisha nitumie SMS')">DEPOSIT</button>
-        <button class="btn" style="background:#333; margin-bottom:10px;" onclick="withdraw()">WITHDRAW</button>
-        <button class="btn" style="background:#ff0000;" onclick="localStorage.clear();location.reload();">LOGOUT</button>
+        <button class="btn" style="background:#ffc107; margin-bottom:10px;" onclick="alert('Lipa 0702170114')">DEPOSIT</button>
+        <button class="btn" style="background:#ff0000;" onclick="withdraw()">WITHDRAW</button>
     </div>
 
     <script>
         const socket = io();
-        let x = 0, y = 0, currentM = 1.0;
-        let activeBets = { 1: false, 2: false };
+        let currentM = 1.0, activeBets = { 1: false, 2: false };
+
+        socket.on('tick', (m) => {
+            currentM = parseFloat(m);
+            document.getElementById('multiplier').innerText = m + "x"; // Odis zinahesabika live hapa!
+            
+            [1, 2].forEach(id => {
+                if(activeBets[id]) {
+                    let win = (document.getElementById('amt' + id).value * currentM).toFixed(2);
+                    document.getElementById('out' + id).innerText = "CASH OUT KES " + win; // Onyesha pesa live
+                }
+            });
+        });
+
+        function placeBet(id) {
+            if(parseFloat(document.getElementById('bal').innerText) <= 0) return alert("Salio ni 0.00. Deposit kwanza!");
+            activeBets[id] = true;
+            document.getElementById('btn' + id).style.display = 'none';
+            document.getElementById('out' + id).style.display = 'block';
+        }
+
+        function cash(id) {
+            activeBets[id] = false;
+            alert("Umeshinda!");
+            document.getElementById('btn' + id).style.display = 'block';
+            document.getElementById('out' + id).style.display = 'none';
+        }
 
         function show(id, el) {
             document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
@@ -99,79 +104,15 @@
             el.classList.add('active');
         }
 
-        socket.on('tick', (m) => {
-            currentM = parseFloat(m);
-            document.getElementById('multiplier').innerText = m + "x"; // Odi zinahesabika live
-            x += 2.0; y += 1.3;
-            document.getElementById('rocket-wrap').style.transform = `translate(${x}px, -${y}px)`;
-            document.getElementById('gold-path').setAttribute('d', `M 0 180 Q ${x/2} 180, ${x+20} ${180-y}`);
-
-            // Onyesha kiasi unachoshinda sasa hivi
-            [1, 2].forEach(id => {
-                if(activeBets[id]) {
-                    let winAmt = (document.getElementById('amt' + id).value * currentM).toFixed(2);
-                    document.getElementById('out' + id).innerText = "CASH OUT KES " + winAmt;
-                    
-                    let autoVal = parseFloat(document.getElementById('auto' + id).value);
-                    if(autoVal > 0 && currentM >= autoVal) cashout(id);
-                }
-            });
-        });
-
-        function placeBet(id) {
-            let balance = parseFloat(document.getElementById('bal').innerText);
-            let amt = parseFloat(document.getElementById('amt' + id).value);
-            if(balance < amt) return alert("Salio lako ni 0.00 KES. Tafadhali DEPOSIT kwanza.");
-            
-            activeBets[id] = true;
-            document.getElementById('btn' + id).style.display = 'none';
-            document.getElementById('out' + id).style.display = 'block';
-            socket.emit('place_bet', { id, amt, phone: localStorage.getItem('vatPhone') });
+        async function handleRegister() {
+            const phone = document.getElementById('reg-phone').value;
+            if(!phone) return alert("Weka namba!");
+            localStorage.setItem('vatPhone', phone);
+            document.getElementById('auth-screen').style.display = 'none';
         }
 
-        function cashout(id) {
-            if(!activeBets[id]) return;
-            activeBets[id] = false;
-            let win = (document.getElementById('amt' + id).value * currentM).toFixed(2);
-            alert("Umeshinda KES " + win);
-            document.getElementById('btn' + id).style.display = 'block';
-            document.getElementById('out' + id).style.display = 'none';
-        }
-
-        function withdraw() {
-            let bal = parseFloat(document.getElementById('bal').innerText);
-            if(bal <= 0) alert("Huna pesa ya kutoa. Cheza ushinde kwanza!");
-            else alert("Ombi la kutoa KES " + bal + " limepokelewa.");
-        }
-
-        socket.on('crash', () => {
-            document.getElementById('multiplier').style.color = 'red';
-            [1,2].forEach(id => { 
-                activeBets[id] = false; 
-                document.getElementById('btn'+id).style.display = 'block';
-                document.getElementById('out'+id).style.display = 'none';
-            });
-        });
-
-        socket.on('new_game', () => {
-            x = 0; y = 0;
-            document.getElementById('multiplier').style.color = 'white';
-            document.getElementById('rocket-wrap').style.transform = `translate(0,0)`;
-            document.getElementById('gold-path').setAttribute('d', '');
-            [1,2].forEach(id => { if(document.getElementById('abt'+id).checked) placeBet(id); });
-        });
-
-        socket.on('history', (data) => {
-            document.getElementById('history-list').innerHTML = data.map(v => `<div class="hist-item" style="color:${v>=2?'#2ecc71':'#ff4d4d'}">${v}x</div>`).join('');
-        });
-
-        function send() {
-            const txt = document.getElementById('msg').value;
-            if(txt) { socket.emit('send_msg', { text: txt }); document.getElementById('msg').value = ''; }
-        }
-        socket.on('new_msg', (data) => {
-            document.getElementById('chat-list').innerHTML += `<div><b>Mtumiaji:</b> ${data.text}</div>`;
-        });
+        window.onload = () => { if(localStorage.getItem('vatPhone')) document.getElementById('auth-screen').style.display = 'none'; }
     </script>
 </body>
 </html>
+          
