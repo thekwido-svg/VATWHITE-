@@ -15,36 +15,37 @@ const pool = new Pool({
 app.use(express.json());
 app.use(express.static(__dirname + '/'));
 
-let currentMultiplier = 1.0, gameStatus = "running", gameHistory = [];
-let nextCrashPoint = null; 
+let currentMultiplier = 1.0;
+let gameStatus = "running";
+let gameHistory = [];
+let nextCrashPoint = null;
 let paymentDetails = { method: "MPESA TILL", number: "0702170114", name: "VATWHITE ADMIN" };
 
 // ALGORITHM YA FAIDA NA UDHIBITI WA ADMIN
 function generateCrashPoint() {
     if (nextCrashPoint !== null) {
         let p = nextCrashPoint;
-        nextCrashPoint = null; // Inatumika mara moja tu kisha inajifuta
+        nextCrashPoint = null; 
         return p;
     }
     let chance = Math.random() * 100;
-    if (chance < 35) return (Math.random() * 0.2 + 1.00).toFixed(2); // 35% ya michezo inakufa haraka (1.00x - 1.20x)
-    if (chance < 99) return (Math.random() * 5 + 1.2).toFixed(2); // Michezo ya kawaida
-    return (Math.random() * 150 + 50.0).toFixed(2); // 1% tu ndio inaenda juu sana (200x adimu)
+    if (chance < 35) return (Math.random() * 0.2 + 1.00).toFixed(2); // 35% faida kwa Admin (1.00x-1.20x)
+    if (chance < 99) return (Math.random() * 5 + 1.2).toFixed(2); 
+    return (Math.random() * 150 + 50.0).toFixed(2); // 1% pekee ndio odis kubwa sana
 }
 
 let crashPoint = generateCrashPoint();
 
 setInterval(() => {
     if (gameStatus === "running") {
-        let speed = currentMultiplier < 2 ? 0.01 : 0.05;
-        currentMultiplier = (parseFloat(currentMultiplier) + speed).toFixed(2);
+        currentMultiplier = (parseFloat(currentMultiplier) + 0.05).toFixed(2);
         io.emit('tick', currentMultiplier);
 
         if (parseFloat(currentMultiplier) >= parseFloat(crashPoint)) {
             gameStatus = "crashed";
             io.emit('crash', currentMultiplier);
             gameHistory.unshift(currentMultiplier);
-            if (gameHistory.length > 6) gameHistory.pop();
+            if (gameHistory.length > 8) gameHistory.pop();
             io.emit('history', gameHistory);
             setTimeout(() => {
                 currentMultiplier = 1.0;
@@ -65,7 +66,11 @@ app.post('/admin/set-crash', (req, res) => {
 app.get('/admin/user-details/:phone', async (req, res) => {
     try {
         const user = await pool.query("SELECT phone, (balance->>'gold')::numeric as bal FROM users WHERE phone = $1", [req.params.phone]);
-        res.json(user.rows[0]);
+        if (user.rows.length > 0) {
+            res.json({ success: true, data: user.rows[0] });
+        } else {
+            res.status(404).json({ success: false, message: "Hajapatikana" });
+        }
     } catch (err) { res.status(500).send(err); }
 });
 
