@@ -3,68 +3,70 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; padding: 10px; }
-        .card { background: #111; padding: 20px; border-radius: 12px; border: 1px solid #333; margin-bottom: 15px; }
-        input { width: 100%; padding: 15px; margin: 10px 0; background: #000; color: gold; border: 1px solid #444; font-size: 1rem; box-sizing: border-box; }
-        button { width: 100%; padding: 18px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 5px; }
-        .btn-green { background: #28a745; color: #fff; }
-        .btn-yellow { background: gold; color: #000; }
-        .btn-red { background: #dc3545; color: #fff; }
+        body { background: #000; color: #fff; font-family: sans-serif; padding: 15px; }
+        .card { background: #111; padding: 25px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
+        input { width: 100%; padding: 20px; margin: 10px 0; background: #000; color: gold; border: 1px solid #444; font-size: 1.2rem; box-sizing: border-box; }
+        button { width: 100%; padding: 25px; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 10px; }
+        .btn-green { background: #28a745; color: white; }
+        .btn-yellow { background: gold; color: black; }
+        .btn-red { background: #dc3545; color: white; }
     </style>
 </head>
 <body>
-    <h2 style="color:gold; text-align:center;">VATWHITE ADMIN CONTROL</h2>
+    <h1 style="color:gold; text-align:center;">VATWHITE CONTROL</h1>
 
     <div class="card">
-        <h3 style="color:gold;">DHIBITI ROCKET (CRASH)</h3>
-        <input type="number" id="next-point" value="1.00" step="0.01">
-        <button class="btn-yellow" onclick="setCrash()">SET NEXT CRASH</button>
+        <h3>Dhibiti Rocket (1.00x)</h3>
+        <input type="number" id="crash-p" value="1.00" step="0.01">
+        <button class="btn-yellow" onclick="setCr()">SET NEXT CRASH</button>
     </div>
 
     <div class="card">
-        <h3 style="color:gold;">TAFUTA & BADILISHA PESA</h3>
-        <input type="number" id="s-phone" placeholder="Namba ya Mchezaji">
-        <button style="background:#444; color:#fff;" onclick="getUser()">TAFUTA MCHEZAJI</button>
-        <div id="u-data" style="margin-top:15px; display:none; border-top:1px solid #333; pt-10px;">
-            <p>Salio: <span id="u-bal" style="color:lime">0.00</span> KES</p>
-            <input type="number" id="mod-amt" placeholder="Kiasi (Mfano: 500)">
-            <button class="btn-green" onclick="update(1)">ONGEZA PESA</button>
-            <button class="btn-red" onclick="update(-1)">PUNGUZA PESA</button>
+        <h3>Tafuta & Ongeza Pesa</h3>
+        <input type="number" id="sph" placeholder="Namba ya Mchezaji">
+        <button style="background:#444; color:white;" onclick="getU()">TAFUTA DATA</button>
+        <div id="ud" style="display:none; margin-top:20px;">
+            <p>Salio la Sasa: <span id="ubal" style="color:lime; font-weight:bold;">0.00</span> KES</p>
+            <input type="number" id="mamt" placeholder="Kiasi (Mfano 500 au -500)">
+            <button class="btn-green" onclick="upd(1)">ONGEZA PESA</button>
+            <button class="btn-red" onclick="upd(-1)">PUNGUZA PESA</button>
         </div>
     </div>
 
     <div class="card">
-        <h3 style="color:gold;">NAMBA ZA DEPOSIT</h3>
-        <input type="text" id="p-meth" placeholder="Method (e.g. TILL)">
-        <input type="text" id="p-num" placeholder="Namba ya Malipo">
-        <input type="text" id="p-name" placeholder="Jina la Account">
-        <button class="btn-green" onclick="updatePay()">BADILISHA MALIPO</button>
+        <h3>Namba za Malipo (Deposit)</h3>
+        <input type="text" id="pm" placeholder="Method (TILL/PAYBILL)">
+        <input type="text" id="pn" placeholder="Namba ya Malipo">
+        <input type="text" id="pnm" placeholder="Jina la Account">
+        <button class="btn-green" onclick="updP()">BADILISHA MALIPO</button>
     </div>
 
     <script>
-        async function setCrash() {
-            const point = document.getElementById('next-point').value;
-            await fetch('/admin/set-crash', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({point}) });
-            alert("Mchezo ujao utaanguka kwa " + point + "x");
+        async function setCr() {
+            await fetch('/admin/set-crash', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({point: document.getElementById('crash-p').value})});
+            alert("Imewekwa!");
         }
-        async function getUser() {
-            const phone = document.getElementById('s-phone').value;
-            const res = await fetch('/admin/user-details/' + phone);
-            const data = await res.json();
-            if(data) { document.getElementById('u-data').style.display='block'; document.getElementById('u-bal').innerText = data.bal; }
-            else alert("Hajapatikana!");
+        async function getU() {
+            const r = await fetch('/admin/user-details/'+document.getElementById('sph').value);
+            const res = await r.json();
+            if(r.ok && res.success) {
+                document.getElementById('ud').style.display='block';
+                document.getElementById('ubal').innerText=res.data.bal;
+            } else {
+                document.getElementById('ud').style.display='none';
+                alert("Mchezaji huyu hajajisajili!");
+            }
         }
-        async function update(t) {
-            const phone = document.getElementById('s-phone').value;
-            let amt = parseFloat(document.getElementById('mod-amt').value);
-            if(t === -1) amt = -Math.abs(amt);
-            await fetch('/admin/update-balance', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({phone, amount: amt}) });
-            alert("Salio limebadilishwa!"); getUser();
+        async function upd(t) {
+            let a = parseFloat(document.getElementById('mamt').value);
+            if(t===-1) a = -Math.abs(a);
+            await fetch('/admin/update-balance', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone:document.getElementById('sph').value, amount:a})});
+            alert("Imekamilika!"); getU();
         }
-        async function updatePay() {
-            const body = { method: document.getElementById('p-meth').value, number: document.getElementById('p-num').value, name: document.getElementById('p-name').value };
-            await fetch('/admin/update-payment', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
-            alert("Namba za malipo zimebadilishwa!");
+        async function updP() {
+            const b = {method:document.getElementById('pm').value, number:document.getElementById('pn').value, name:document.getElementById('pnm').value};
+            await fetch('/admin/update-payment', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(b)});
+            alert("Namba zimebadilishwa!");
         }
     </script>
 </body>
