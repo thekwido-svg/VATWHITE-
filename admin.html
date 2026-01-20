@@ -1,25 +1,67 @@
-// Function ya kutafuta mchezaji
-async function getU() {
-    const phoneInput = document.getElementById('sph').value;
-    const infoDiv = document.getElementById('ud'); // Sehemu inayofichuka
-    
-    if(!phoneInput) return alert("Weka namba ya mchezaji kwanza!");
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; }
+        .card { background: #111; border: 1px solid #333; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; background: #000; color: gold; border: 1px solid #444; border-radius: 5px; margin-bottom: 10px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-y { background: gold; color: #000; }
+        .btn-g { background: #28a745; color: #fff; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h2 style="color:gold; text-align:center;">VATWHITE ADMIN</h2>
 
-    try {
-        const response = await fetch('/admin/user-details/' + phoneInput);
-        const result = await response.json();
+    <div class="card">
+        <h3>Dhibiti Rocket</h3>
+        <input type="number" id="cInput" placeholder="Next Crash (mfano 2.50)">
+        <button class="btn-y" onclick="setCr()">SET CRASH</button>
+    </div>
 
-        if (response.ok && result.success) {
-            // KAMA IPO: Onyesha data na fungua box la pesa
-            infoDiv.style.display = 'block';
-            document.getElementById('ubal').innerText = result.data.bal;
-            alert("Mchezaji amepatikana!");
-        } else {
-            // KAMA HAIPO: Ficha box na toa onyo
-            infoDiv.style.display = 'none';
-            alert("Namba hiyo HAIJAJISAJILI kwenye mfumo.");
+    <div class="card">
+        <h3>Tafuta & Ongeza Pesa</h3>
+        <input type="number" id="sph" placeholder="Namba ya Mchezaji">
+        <button style="background:#333; color:#fff;" onclick="getU()">TAFUTA DATA</button>
+        <div id="ud" style="display:none; margin-top:15px; border-top:1px solid #333; padding-top:15px;">
+            <p>Salio: <span id="ubal" style="color:green;">0.00</span> KES</p>
+            <input type="number" id="amt" placeholder="Kiasi cha kuongeza">
+            <button class="btn-g" onclick="upB()">ONGEZA SALIO</button>
+        </div>
+    </div>
+
+    <script>
+        async function getU() {
+            const p = document.getElementById('sph').value;
+            const res = await fetch('/admin/user-details/' + p);
+            const d = await res.json();
+            if(d.success) {
+                document.getElementById('ubal').innerText = d.data.bal;
+                document.getElementById('ud').style.display = 'block';
+            } else { alert("Hajapatikana!"); }
         }
-    } catch (error) {
-        alert("Server imekataa kuleta data. Hakikisha umei-deploy vizuri Render!");
-    }
-}
+
+        async function upB() {
+            const p = document.getElementById('sph').value;
+            const a = document.getElementById('amt').value;
+            await fetch('/admin/update-balance', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ phone: p, amount: parseFloat(a) })
+            });
+            alert("Pesa imeongezwa!"); getU();
+        }
+
+        async function setCr() {
+            const p = document.getElementById('cInput').value;
+            await fetch('/admin/set-crash', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ point: p })
+            });
+            alert("Crash imewekwa!");
+        }
+    </script>
+</body>
+</html>
