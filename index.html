@@ -2,187 +2,102 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VATWHITE</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-        #auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .auth-box { width: 85%; background: #111; padding: 25px; border-radius: 15px; border: 1px solid #333; }
-        #stage { height: 180px; position: relative; overflow: hidden; background: #000; border-bottom: 1px solid #222; }
-        #multiplier { position: absolute; top: 30%; width: 100%; text-align: center; font-size: 4rem; font-weight: 900; z-index: 2; }
-        #rocket-wrap { position: absolute; bottom: 10%; left: 5%; font-size: 40px; transition: transform 0.1s linear; z-index: 2; }
-        .history-bar { display: flex; gap: 8px; padding: 10px; justify-content: center; }
-        .hist-item { padding: 3px 10px; border-radius: 5px; font-size: 0.8rem; background: #1a1a1a; font-weight: bold; }
-        .tab-bar { display: flex; border-bottom: 2px solid #222; background: #0a0a0a; }
-        .tab { flex: 1; padding: 15px; text-align: center; font-size: 0.8rem; font-weight: bold; color: #777; cursor: pointer; }
+        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; }
+        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .auth-box { width: 85%; background: #111; padding: 20px; border-radius: 15px; border: 1px solid #333; }
+        #multiplier { font-size: 4rem; text-align: center; padding: 40px 0; font-weight: 900; }
+        .bet-box { background: #111; padding: 15px; margin: 10px; border-radius: 10px; border: 1px solid #222; }
+        .btn-bet { width: 100%; padding: 15px; background: #28a745; color: #fff; border: none; border-radius: 8px; font-weight: bold; }
+        .btn-out { width: 100%; padding: 15px; background: #ffc107; color: #00; border: none; border-radius: 8px; font-weight: bold; display: none; }
+        input { width: 100%; padding: 12px; background: #000; color: gold; border: 1px solid #333; border-radius: 5px; margin-bottom: 10px; }
+        .tab-bar { display: flex; background: #0a0a0a; border-bottom: 2px solid #222; }
+        .tab { flex: 1; padding: 15px; text-align: center; font-size: 0.8rem; color: #777; cursor: pointer; }
         .tab.active { color: gold; border-bottom: 2px solid gold; }
-        .content { display: none; flex: 1; overflow-y: auto; }
-        .content.active { display: block; }
-        .bet-box { background: #111; padding: 15px; border-radius: 10px; margin: 10px; border: 1px solid #222; }
-        .btn-bet { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; }
-        .btn-out { width: 100%; padding: 15px; background: #ffc107; color: black; border: none; border-radius: 8px; font-weight: bold; display: none; }
-        input { width: 100%; padding: 12px; background: #000; color: gold; border: 1px solid #333; border-radius: 5px; box-sizing: border-box; }
-        .chat-msg { padding: 8px; border-bottom: 1px solid #222; font-size: 0.9rem; }
     </style>
 </head>
 <body>
-
     <div id="auth-screen">
-        <h2 style="color:gold; margin-bottom: 20px;">VATWHITE REGISTER</h2>
+        <h2 style="color:gold;">VATWHITE REGISTER</h2>
         <div class="auth-box">
-            <input type="number" id="r-phone" placeholder="Namba ya Simu" style="margin-bottom:15px;">
-            <input type="password" id="r-pass" placeholder="Password" style="margin-bottom:20px;">
+            <input type="number" id="r-phone" placeholder="Namba ya Simu">
+            <input type="password" id="r-pass" placeholder="Password">
             <button class="btn-bet" onclick="handleAuth()">JISAJILI / LOGIN</button>
         </div>
     </div>
 
-    <div style="display:flex; justify-content:space-between; padding:12px; font-weight:bold; background: #000;">
+    <div style="display:flex; justify-content:space-between; padding:15px; font-weight:bold;">
         <span style="color:gold;">VATWHITE</span>
         <span style="color:#28a745;"><span id="bal">0.00</span> KES</span>
     </div>
 
-    <div id="stage">
-        <div id="multiplier">1.00x</div>
-        <div id="rocket-wrap">🚀</div>
-        <svg style="position:absolute; width:100%; height:100%;"><path id="gold-path" d="" fill="none" stroke="gold" stroke-width="4"/></svg>
-    </div>
-
-    <div class="history-bar" id="hist-list"></div>
+    <div id="multiplier">1.00x</div>
 
     <div class="tab-bar">
-        <div class="tab active" onclick="sh('bet', this)">BETTING</div>
-        <div class="tab" onclick="sh('chat', this)">LIVE CHAT</div>
-        <div class="tab" onclick="sh('menu', this)">MENU</div>
+        <div class="tab active">BETTING</div>
+        <div class="tab">LIVE CHAT</div>
+        <div class="tab">MENU</div>
     </div>
 
-    <div id="bet" class="content active">
-        <div class="bet-box">
-            <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <input type="number" id="a1" value="10">
-                <input type="number" id="ac1" placeholder="Auto Cash">
-            </div>
-            <button id="b1" class="btn-bet" onclick="pBet(1)">BET</button>
-            <button id="o1" class="btn-out" onclick="cOut(1)">CASH OUT</button>
-            <label style="font-size:0.8rem; margin-top:10px; display:block;"><input type="checkbox" id="ab1"> Auto Bet</label>
-        </div>
-        <div class="bet-box">
-            <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <input type="number" id="a2" value="100">
-                <input type="number" id="ac2" placeholder="Auto Cash">
-            </div>
-            <button id="b2" class="btn-bet" onclick="pBet(2)">BET</button>
-            <button id="o2" class="btn-out" onclick="cOut(2)">CASH OUT</button>
-            <label style="font-size:0.8rem; margin-top:10px; display:block;"><input type="checkbox" id="ab2"> Auto Bet</label>
-        </div>
-    </div>
-
-    <div id="chat" class="content" style="padding:10px;">
-        <div id="c-box" style="height:250px; background:#111; overflow-y:auto; border-radius:10px; padding:10px; margin-bottom:10px;"></div>
-        <div style="display:flex; gap:8px;">
-            <input type="text" id="m-text" placeholder="Sema kitu...">
-            <button class="btn-bet" style="width:auto; padding:0 20px;" onclick="sChat()">TUMA</button>
-        </div>
-    </div>
-
-    <div id="menu" class="content" style="padding:20px;">
-        <button class="btn-bet" style="background:gold; color:#000; margin-bottom:20px;" onclick="dep()">DEPOSIT PESA</button>
-        <button class="btn-bet" style="background:#222;" onclick="alert('Maombi yako yamepokelewa!')">WITHDRAW</button>
+    <div class="bet-box">
+        <input type="number" id="a1" value="10">
+        <button id="b1" class="btn-bet" onclick="pBet()">BET</button>
+        <button id="o1" class="btn-out" onclick="cOut()">CASH OUT</button>
     </div>
 
     <script>
         const socket = io();
-        let x = 0, y = 0, currentM = 1.0, activeB = { 1: false, 2: false }, myPhone = localStorage.getItem('vP');
+        let myPhone = localStorage.getItem('vP'), currentM = 1.0, isBetting = false;
 
-        // SOMA DATA KUTOKA ADMIN
         async function loadUser() {
             if(!myPhone) return;
-            try {
-                const r = await fetch('/admin/user-details/' + myPhone);
-                const d = await r.json();
-                if(d.success) document.getElementById('bal').innerText = d.data.bal;
-            } catch(e) {}
+            const r = await fetch('/admin/user-details/' + myPhone);
+            const d = await r.json();
+            if(d.success) document.getElementById('bal').innerText = d.data.bal;
         }
 
         async function handleAuth() {
-            const p = document.getElementById('r-phone').value;
-            const s = document.getElementById('r-pass').value;
-            if(!p || !s) return alert("Jaza kila kitu!");
-            const res = await fetch('/register', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({phone:p, password:s}) });
-            if(res.ok) { localStorage.setItem('vP', p); myPhone = p; document.getElementById('auth-screen').style.display='none'; loadUser(); }
+            const p = document.getElementById('r-phone').value, s = document.getElementById('r-pass').value;
+            if(!p || !s) return alert("Jaza zote!");
+            await fetch('/register', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({phone:p, password:s}) });
+            localStorage.setItem('vP', p); myPhone = p;
+            document.getElementById('auth-screen').style.display = 'none'; loadUser();
         }
 
         socket.on('tick', (m) => {
             currentM = parseFloat(m);
             document.getElementById('multiplier').innerText = m + "x";
-            x += 2; y += 1.2;
-            document.getElementById('rocket-wrap').style.transform = `translate(${x}px, -${y}px)`;
-            document.getElementById('gold-path').setAttribute('d', `M 0 180 Q ${x/2} 180, ${x+25} ${180-y}`);
-            [1, 2].forEach(id => {
-                if(activeB[id]) {
-                    const win = (document.getElementById('a' + id).value * currentM).toFixed(2);
-                    document.getElementById('o' + id).innerText = "CASH OUT " + win;
-                    if(document.getElementById('ac'+id).value && currentM >= document.getElementById('ac'+id).value) cOut(id);
-                }
-            });
+            if(isBetting) document.getElementById('o1').innerText = "CASH OUT " + (document.getElementById('a1').value * currentM).toFixed(2);
         });
-
-        // BETTING NA UPDATE DATABASE
-        async function pBet(id) {
-            const amt = parseFloat(document.getElementById('a' + id).value);
-            const bal = parseFloat(document.getElementById('bal').innerText);
-            if(amt > bal) return alert("Huna pesa za kutosha!");
-            
-            // Kata pesa kwa database kwanza
-            await fetch('/admin/update-balance', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({phone: myPhone, amount: -amt}) });
-            activeB[id] = true; loadUser();
-            document.getElementById('b'+id).style.display='none'; document.getElementById('o'+id).style.display='block';
-        }
-
-        async function cOut(id) {
-            if(!activeB[id]) return;
-            activeB[id] = false;
-            const win = parseFloat(document.getElementById('a' + id).value * currentM);
-            // Ongeza ushindi kwa database
-            await fetch('/admin/update-balance', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({phone: myPhone, amount: win}) });
-            alert("Umeshinda KES " + win.toFixed(2));
-            loadUser();
-            document.getElementById('b'+id).style.display='block'; document.getElementById('o'+id).style.display='none';
-        }
 
         socket.on('crash', () => {
             document.getElementById('multiplier').style.color = 'red';
-            activeB = { 1: false, 2: false };
-            [1,2].forEach(id => { document.getElementById('b'+id).style.display='block'; document.getElementById('o'+id).style.display='none'; });
-            loadUser(); // Refresh salio baada ya crash
+            isBetting = false;
+            document.getElementById('b1').style.display = 'block'; document.getElementById('o1').style.display = 'none';
         });
 
         socket.on('new_game', () => {
-            x = 0; y = 0; document.getElementById('multiplier').style.color = 'white';
-            document.getElementById('rocket-wrap').style.transform = `translate(0,0)`;
-            document.getElementById('gold-path').setAttribute('d', '');
-            [1,2].forEach(id => { if(document.getElementById('ab'+id).checked) pBet(id); });
+            document.getElementById('multiplier').style.color = 'white'; loadUser();
         });
 
-        function sh(i, e) {
-            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(i).classList.add('active'); e.classList.add('active');
+        async function pBet() {
+            const amt = parseFloat(document.getElementById('a1').value);
+            if(amt > parseFloat(document.getElementById('bal').innerText)) return alert("Huna pesa!");
+            await fetch('/admin/update-balance', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({phone: myPhone, amount: -amt}) });
+            isBetting = true; loadUser();
+            document.getElementById('b1').style.display = 'none'; document.getElementById('o1').style.display = 'block';
         }
 
-        function sChat() { 
-            let t = document.getElementById('m-text').value; 
-            if(t) { socket.emit('send_msg', { p: myPhone.substring(myPhone.length - 4), t: t }); document.getElementById('m-text').value = ''; } 
-        }
-        socket.on('new_msg', (d) => { document.getElementById('c-box').innerHTML += `<div class="chat-msg"><b>User...${d.p}:</b> ${d.t}</div>`; });
-        socket.on('history', (d) => { document.getElementById('hist-list').innerHTML = d.map(v => `<div class="hist-item" style="color:${v>=2?'#2ecc71':'#ff4d4d'}">${v}x</div>`).join(''); });
-
-        async function dep() {
-            const res = await fetch('/payment-info');
-            const d = await res.json();
-            alert(`LIPA:\nMethod: ${d.method}\nNamba: ${d.number}\nJina: ${d.name}`);
+        async function cOut() {
+            if(!isBetting) return;
+            isBetting = false;
+            const win = parseFloat(document.getElementById('a1').value * currentM);
+            await fetch('/admin/update-balance', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({phone: myPhone, amount: win}) });
+            document.getElementById('b1').style.display = 'block'; document.getElementById('o1').style.display = 'none'; loadUser();
         }
 
-        window.onload = () => { if(myPhone) { document.getElementById('auth-screen').style.display='none'; loadUser(); } }
+        if(myPhone) { document.getElementById('auth-screen').style.display = 'none'; loadUser(); }
     </script>
 </body>
 </html>
